@@ -4,8 +4,9 @@ import json
 import sys
 from textwrap import indent
 
-import numpydoc.docscrape as nds
 from there import print
+
+import numpydoc.docscrape as nds
 
 from .examples_section_utils import reformat_example_lines
 
@@ -101,12 +102,15 @@ class NumpyDocString(nds.NumpyDocString):
         return lines
 
     def to_json(self):
-        return {
+        res = {
             "_parsed_data": self._parsed_data,
             "edata": self.edata,
             "refs": self.refs,
             "backref": self.backrefs,
+            "see_also": getattr(self, "see_also", []),
         }
+
+        return res
 
     def __init__(self, *args, **kwargs):
         self.ordered_sections = []
