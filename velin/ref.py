@@ -549,9 +549,14 @@ def reformat_file(data, filename, compact, unsafe):
                 func_name=func_name,
             )
             if not unsafe:
-                ff = new_doc
-
-                d2 = NumpyDocString(dedend_docstring(new_doc))
+                _, d2 = compute_new_doc(
+                    docstring,
+                    filename,
+                    level=nindent,
+                    compact=compact,
+                    meta=meta,
+                    func_name=func_name,
+                )
                 if not d2._parsed_data == d_._parsed_data:
                     secs1 = {
                         k: v
@@ -565,7 +570,7 @@ def reformat_file(data, filename, compact, unsafe):
                     }
                     raise ValueError(
                         "Numpydoc parsing seem to differ after reformatting, this may be a reformatting bug. Rerun with `velin --unsafe "
-                        + str(fname)
+                        + str(filename)
                         + "`\n"
                         + str(secs1)
                         + "\n"
