@@ -1,7 +1,6 @@
 import glob
 
 import pytest
-
 from minirst import compute_indents, find_indent_blocks, reformat
 
 test_files = glob.glob("examples/*.rst")

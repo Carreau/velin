@@ -4,9 +4,9 @@ import json
 import sys
 from textwrap import indent
 
-from there import print
-
 import numpydoc.docscrape as nds
+from numpydoc.docscrape import Parameter
+from there import print
 
 from .examples_section_utils import reformat_example_lines
 
@@ -102,15 +102,18 @@ class NumpyDocString(nds.NumpyDocString):
         return lines
 
     def to_json(self):
-        res = {
-            "_parsed_data": self._parsed_data,
-            "edata": self.edata,
-            "refs": self.refs,
-            "backref": self.backrefs,
-            "see_also": getattr(self, "see_also", []),
-        }
+
+        res = {k: v for (k, v) in self.__dict__.items() if ((k not in {"_doc"}) and v)}
 
         return res
+
+    @classmethod
+    def from_json(cls, obj):
+        nds = cls("")
+        nds.__dict__.update(obj)
+        nds._parsed_data["Parameters"] = [
+            Parameter(a, b, c) for (a, b, c) in blob._parsed_data["Parameters"]
+        ]
 
     def __init__(self, *args, **kwargs):
         self.ordered_sections = []
@@ -376,7 +379,6 @@ class SectionFormatter:
             if p.desc:
                 out += indent("\n".join(p.desc), "    ")
                 out += "\n"
-
         return out
 
 
@@ -510,7 +512,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
     return fmt, doc
 
 
-def reformat_file(data, filename, compact, unsafe):
+def reformat_file(data, filename, compact, unsafe, fail=False):
 
     tree = ast.parse(data)
     new = data
@@ -578,21 +580,22 @@ def reformat_file(data, filename, compact, unsafe):
                     )
         except Exception as e:
             print(f"somethign went wrong with {filename}:{docstring}")
-            raise
+            if fail:
+                raise
             continue
         if not docstring.strip():
             print("DOCSTRING IS EMPTY !!!", func.name)
         # test(docstring, file)
-        # if new_doc.strip() and new_doc != docstring:
-        #    need_changes.append(str(filename) + f":{start}:{func.name}")
-        #    if ('"""' in new_doc) or ("'''" in new_doc):
-        #        print(
-        #            "SKIPPING", filename, func.name, "triple quote not handled", new_doc
-        #        )
-        #    else:
-        #        # if docstring not in new:
-        #        #    print("ESCAPE issue:", docstring)
-        #        new = new.replace(docstring, new_doc)
+        if new_doc.strip() and new_doc != docstring:
+            # need_changes.append(str(filename) + f":{start}:{func.name}")
+            if ('"""' in new_doc) or ("'''" in new_doc):
+                print(
+                    "SKIPPING", filename, func.name, "triple quote not handled", new_doc
+                )
+            else:
+                # if docstring not in new:
+                #    print("ESCAPE issue:", docstring)
+                new = new.replace(docstring, new_doc)
     return new
 
 
@@ -638,6 +641,7 @@ def main():
     )
     parser.add_argument("--no-color", action="store_false", dest="do_highlight")
     parser.add_argument("--compact", action="store_true", help="Please ignore")
+    parser.add_argument("--no-fail", action="store_false", dest="fail")
     parser.add_argument(
         "--write",
         dest="write",
@@ -666,13 +670,13 @@ def main():
     for file in to_format:
         # print(file)
         try:
-            with open(file, "r") as f:
+            with open(file) as f:
                 data = f.read()
         except Exception as e:
             # continue
             continue
             raise RuntimeError(f"Fail reading {file}") from e
-        new = reformat_file(data, file, args.compact, args.unsafe)
+        new = reformat_file(data, file, args.compact, args.unsafe, fail=args.fail)
         # test(docstring, file)
         if new != data:
 
@@ -689,8 +693,8 @@ def main():
 
                 if args.do_highlight:
                     from pygments import highlight
-                    from pygments.lexers import DiffLexer
                     from pygments.formatters import TerminalFormatter
+                    from pygments.lexers import DiffLexer
 
                     code = highlight(code, DiffLexer(), TerminalFormatter())
 
