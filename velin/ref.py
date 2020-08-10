@@ -104,6 +104,8 @@ class NumpyDocString(nds.NumpyDocString):
     def to_json(self):
 
         res = {k: v for (k, v) in self.__dict__.items() if ((k not in {"_doc"}) and v)}
+        res['_parsed_data'] = {k: v for (k, v) in res['_parsed_data'].items() if v}
+        
 
         return res
 
@@ -112,8 +114,9 @@ class NumpyDocString(nds.NumpyDocString):
         nds = cls("")
         nds.__dict__.update(obj)
         nds._parsed_data["Parameters"] = [
-            Parameter(a, b, c) for (a, b, c) in blob._parsed_data["Parameters"]
+            Parameter(a, b, c) for (a, b, c) in nds._parsed_data["Parameters"]
         ]
+        return nds
 
     def __init__(self, *args, **kwargs):
         self.ordered_sections = []
