@@ -104,8 +104,7 @@ class NumpyDocString(nds.NumpyDocString):
     def to_json(self):
 
         res = {k: v for (k, v) in self.__dict__.items() if ((k not in {"_doc"}) and v)}
-        res['_parsed_data'] = {k: v for (k, v) in res['_parsed_data'].items() if v}
-        
+        res["_parsed_data"] = {k: v for (k, v) in res["_parsed_data"].items() if v}
 
         return res
 
