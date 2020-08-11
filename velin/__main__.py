@@ -1,3 +1,3 @@
-from minirst.ref import main
+from velin.ref import main
 
 main()

@@ -112,9 +112,18 @@ class NumpyDocString(nds.NumpyDocString):
     def from_json(cls, obj):
         nds = cls("")
         nds.__dict__.update(obj)
+        #print(obj['_parsed_data'].keys())
         nds._parsed_data["Parameters"] = [
-            Parameter(a, b, c) for (a, b, c) in nds._parsed_data["Parameters"]
+            Parameter(a, b, c) for (a, b, c) in nds._parsed_data.get("Parameters", [])
         ]
+
+        for it in ("Returns", "Yields", 'Extended Summary', 'Receives', 'Other Parameters', 'Raises', 'Warns',
+                'Warnings', 'See Also', 'Notes','References', 'Examples', 'Attributes', 'Methods'):
+            if it not in nds._parsed_data:
+                nds._parsed_data[it] = []
+        for it in ("index",):
+            if it not in nds._parsed_data:
+                nds._parsed_data[it] = {}
         return nds
 
     def __init__(self, *args, **kwargs):
