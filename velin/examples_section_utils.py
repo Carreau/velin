@@ -63,9 +63,9 @@ def splitcode(lines):
     if not lines[0].startswith(">>>"):
         return [InOutText([], lines)]
 
-    state = "code"
+    state = "notcode"
     for i, l in enumerate(lines):
-        if l.startswith(">>> "):
+        if l.startswith(">>> ") and state == "notcode":
             state = "code"
             if in_ or out:
                 items.append(InOutText(in_, out))
@@ -73,7 +73,7 @@ def splitcode(lines):
 
             in_.append(l[4:])
         # ... can appear in pandas output.
-        elif l.startswith("... ") and state == "code":
+        elif (l.startswith("... ") or l.startswith(">>> ")) and state == "code":
             in_.append(l[4:])
         else:
             state = "notcode"
