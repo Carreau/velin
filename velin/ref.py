@@ -300,7 +300,7 @@ class SectionFormatter:
                 if type_ is not None:
                     out += f":{type_}:`{ref}`"
                 else:
-                    out += f"{ref}"
+                    out += f"{ref} :"
                 _first = False
 
             if desc:
@@ -600,9 +600,10 @@ def reformat_file(data, filename, compact, unsafe, fail=False):
         if new_doc.strip() and new_doc != docstring:
             # need_changes.append(str(filename) + f":{start}:{func.name}")
             if ('"""' in new_doc) or ("'''" in new_doc):
-                print(
-                    "SKIPPING", filename, func.name, "triple quote not handled", new_doc
-                )
+                # print(
+                #    "SKIPPING", filename, func.name, "triple quote not handled", new_doc
+                # )
+                pass
             else:
                 # if docstring not in new:
                 #    print("ESCAPE issue:", docstring)
