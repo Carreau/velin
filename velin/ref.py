@@ -1,9 +1,12 @@
+import argparse
 import ast
 import difflib
 import json
+import re
 import sys
-from textwrap import indent
+from configparser import ConfigParser
 from pathlib import Path
+from textwrap import indent
 
 import numpydoc.docscrape as nds
 from numpydoc.docscrape import Parameter
@@ -480,8 +483,11 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
         a = [o.strip() for p in params for o in p.name.split(",")]
         if meta[0] in ["self", "cls"]:
             meta = meta[1:]
-        doc_missing = set(meta) - set(a)
-        doc_extra = {x for x in set(a) - set(meta) if not x.startswith("*")}
+        doc_missing = set(meta) - set(a) - {"kwargs", "cls"}
+        doc_extra = {x for x in set(a) - set(meta) if not x.startswith("*")} - {
+            "kwargs",
+            "cls",
+        }
         if len(doc_missing) == len(doc_extra) == 1:
 
             print(fname)
@@ -631,7 +637,11 @@ def reformat_file(data, filename, compact, unsafe, fail=False):
 
 
 def main():
-    import argparse
+    config = ConfigParser()
+    patterns = []
+    if Path("setup.cfg").exists():
+        config.read("setup.cfg")
+        patterns = config.get("velin", "ignore_patterns", fallback="").split(",")
 
     parser = argparse.ArgumentParser(description="reformat the docstrigns of some file")
     parser.add_argument(
@@ -696,9 +706,18 @@ def main():
         else:
             to_format.append(p)
 
+    def to_skip(file, patterns):
+        for p in patterns:
+            if re.match(".+" + p + ".+", file):
+                return True
+        return False
+
     # need_changes = []
     for file in to_format:
-        # print(file)
+        if to_skip(str(file), patterns):
+            print("ignoring", file)
+            continue
+
         try:
             with open(file) as f:
                 data = f.read()
