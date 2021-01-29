@@ -3,10 +3,15 @@ import difflib
 import json
 import sys
 from textwrap import indent
+from pathlib import Path
 
 import numpydoc.docscrape as nds
 from numpydoc.docscrape import Parameter
-from there import print
+
+try:
+    from there import print
+except ImportError:
+    pass
 
 from .examples_section_utils import reformat_example_lines
 
@@ -71,9 +76,7 @@ class NumpyDocString(nds.NumpyDocString):
             "paramerters",
             "arguments",
         ),
-        "Attributes":(
-            "properties",
-        ),
+        "Attributes": ("properties",),
         "Yields": ("signals",),
     }
 
@@ -115,13 +118,27 @@ class NumpyDocString(nds.NumpyDocString):
     def from_json(cls, obj):
         nds = cls("")
         nds.__dict__.update(obj)
-        #print(obj['_parsed_data'].keys())
+        # print(obj['_parsed_data'].keys())
         nds._parsed_data["Parameters"] = [
             Parameter(a, b, c) for (a, b, c) in nds._parsed_data.get("Parameters", [])
         ]
 
-        for it in ("Returns", "Yields", 'Extended Summary', 'Receives', 'Other Parameters', 'Raises', 'Warns',
-                'Warnings', 'See Also', 'Notes','References', 'Examples', 'Attributes', 'Methods'):
+        for it in (
+            "Returns",
+            "Yields",
+            "Extended Summary",
+            "Receives",
+            "Other Parameters",
+            "Raises",
+            "Warns",
+            "Warnings",
+            "See Also",
+            "Notes",
+            "References",
+            "Examples",
+            "Attributes",
+            "Methods",
+        ):
             if it not in nds._parsed_data:
                 nds._parsed_data[it] = []
         for it in ("index",):
@@ -194,7 +211,7 @@ def w(orig):
 
 class Conf:
     """
-    
+
     Here are some of the config options
 
     - F100: Items spacing in Return/Raise/Yield/Parameters/See Also
@@ -479,11 +496,11 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
                 print("  could not fix:", doc_missing, doc_extra)
         else:
             if doc_missing and doc_extra:
-                print(fname)
+                print(f"{fname}:{func_name}")
                 print("  missing:", doc_missing)
                 print("  extra:", doc_extra)
             elif doc_missing or doc_extra:
-                print(fname, func_name)
+                print(f"{fname}:{func_name}")
                 print("  missing:", doc_missing)
                 print("  extra:", doc_extra)
 
@@ -648,8 +665,8 @@ def main():
         help="Do not print the diff",
     )
     parser.add_argument(
-        "--no-black",
-        action="store_false",
+        "--black",
+        action="store_true",
         dest="run_black",
         help="Do not run black on examples",
     )
@@ -670,7 +687,6 @@ def main():
     else:
         BLACK_REFORMAT = False
     to_format = []
-    from pathlib import Path
 
     for f in args.paths:
         p = Path(f)
