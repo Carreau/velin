@@ -318,17 +318,19 @@ class SectionFormatter:
                 rest_desc = []
             _first = True
             for ref, type_ in a:
+                if len(a) > 1:
+                    assert type_ is None
                 if not _first:
                     out += ", "
                 if type_ is not None:
                     out += f":{type_}:`{ref}`"
                 else:
-                    out += f"{ref} :"
+                    out += f"{ref}"
                 _first = False
 
             if desc:
                 if len(a) > 1 or (not compact):
-                    out += f"\n    {desc}"
+                    out += f" :\n    {desc}"
                 else:
                     attempt = f" : {desc}"
                     if len(out.splitlines()[-1] + attempt) > 75 and not force_compact:
