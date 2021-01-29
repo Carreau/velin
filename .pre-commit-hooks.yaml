@@ -1,5 +1,5 @@
 -   id: velin
-    name: Reformat Docstrings
+    name: Velin
     description: This hook attempt to reformat docstrings using numpydoc format.
     entry: velin
     language: python
