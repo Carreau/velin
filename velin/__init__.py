@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .ref import NumpyDocString, main
 
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 
 
 def parse(input):
@@ -675,7 +675,6 @@ class Section:
 
 
 class Paragraph:
-
     @classmethod
     def parse(cls, lines):
         _lines = []

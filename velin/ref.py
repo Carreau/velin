@@ -1,12 +1,20 @@
+import argparse
 import ast
 import difflib
 import json
+import re
 import sys
+from configparser import ConfigParser
+from pathlib import Path
 from textwrap import indent
 
 import numpydoc.docscrape as nds
 from numpydoc.docscrape import Parameter
-from there import print
+
+try:
+    from there import print
+except ImportError:
+    pass
 
 from .examples_section_utils import reformat_example_lines
 
@@ -71,6 +79,7 @@ class NumpyDocString(nds.NumpyDocString):
             "paramerters",
             "arguments",
         ),
+        "Attributes": ("properties",),
         "Yields": ("signals",),
     }
 
@@ -112,13 +121,27 @@ class NumpyDocString(nds.NumpyDocString):
     def from_json(cls, obj):
         nds = cls("")
         nds.__dict__.update(obj)
-        #print(obj['_parsed_data'].keys())
+        # print(obj['_parsed_data'].keys())
         nds._parsed_data["Parameters"] = [
             Parameter(a, b, c) for (a, b, c) in nds._parsed_data.get("Parameters", [])
         ]
 
-        for it in ("Returns", "Yields", 'Extended Summary', 'Receives', 'Other Parameters', 'Raises', 'Warns',
-                'Warnings', 'See Also', 'Notes','References', 'Examples', 'Attributes', 'Methods'):
+        for it in (
+            "Returns",
+            "Yields",
+            "Extended Summary",
+            "Receives",
+            "Other Parameters",
+            "Raises",
+            "Warns",
+            "Warnings",
+            "See Also",
+            "Notes",
+            "References",
+            "Examples",
+            "Attributes",
+            "Methods",
+        ):
             if it not in nds._parsed_data:
                 nds._parsed_data[it] = []
         for it in ("index",):
@@ -191,7 +214,7 @@ def w(orig):
 
 class Conf:
     """
-    
+
     Here are some of the config options
 
     - F100: Items spacing in Return/Raise/Yield/Parameters/See Also
@@ -460,8 +483,11 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
         a = [o.strip() for p in params for o in p.name.split(",")]
         if meta[0] in ["self", "cls"]:
             meta = meta[1:]
-        doc_missing = set(meta) - set(a)
-        doc_extra = {x for x in set(a) - set(meta) if not x.startswith("*")}
+        doc_missing = set(meta) - set(a) - {"kwargs", "cls"}
+        doc_extra = {x for x in set(a) - set(meta) if not x.startswith("*")} - {
+            "kwargs",
+            "cls",
+        }
         if len(doc_missing) == len(doc_extra) == 1:
 
             print(fname)
@@ -476,11 +502,11 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
                 print("  could not fix:", doc_missing, doc_extra)
         else:
             if doc_missing and doc_extra:
-                print(fname)
+                print(f"{fname}:{func_name}")
                 print("  missing:", doc_missing)
                 print("  extra:", doc_extra)
             elif doc_missing or doc_extra:
-                print(fname, func_name)
+                print(f"{fname}:{func_name}")
                 print("  missing:", doc_missing)
                 print("  extra:", doc_extra)
 
@@ -612,7 +638,11 @@ def reformat_file(data, filename, compact, unsafe, fail=False):
 
 
 def main():
-    import argparse
+    config = ConfigParser()
+    patterns = []
+    if Path("setup.cfg").exists():
+        config.read("setup.cfg")
+        patterns = config.get("velin", "ignore_patterns", fallback="").split(",")
 
     parser = argparse.ArgumentParser(description="reformat the docstrigns of some file")
     parser.add_argument(
@@ -646,8 +676,8 @@ def main():
         help="Do not print the diff",
     )
     parser.add_argument(
-        "--no-black",
-        action="store_false",
+        "--black",
+        action="store_true",
         dest="run_black",
         help="Do not run black on examples",
     )
@@ -668,7 +698,6 @@ def main():
     else:
         BLACK_REFORMAT = False
     to_format = []
-    from pathlib import Path
 
     for f in args.paths:
         p = Path(f)
@@ -678,9 +707,18 @@ def main():
         else:
             to_format.append(p)
 
+    def to_skip(file, patterns):
+        for p in patterns:
+            if re.match(".+" + p + ".+", file):
+                return True
+        return False
+
     # need_changes = []
     for file in to_format:
-        # print(file)
+        if to_skip(str(file), patterns):
+            print("ignoring", file)
+            continue
+
         try:
             with open(file) as f:
                 data = f.read()
