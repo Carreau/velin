@@ -711,6 +711,8 @@ def main():
 
     def to_skip(file, patterns):
         for p in patterns:
+            if not p:
+                continue
             if re.match(".+" + p + ".+", file):
                 return True
         return False
