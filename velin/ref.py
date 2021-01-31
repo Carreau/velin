@@ -490,6 +490,8 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
             "kwargs",
             "cls",
         }
+        # don't considert template parameter from numpy/scipy
+        doc_extra = {x for x in doc_extra if not (('$' in x) or ('%' in x))}
         if len(doc_missing) == len(doc_extra) == 1:
 
             print(fname)
