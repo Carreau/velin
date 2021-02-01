@@ -318,8 +318,8 @@ class SectionFormatter:
                 rest_desc = []
             _first = True
             for ref, type_ in a:
-                if len(a) > 1:
-                    assert type_ is None
+                #if len(a) > 1:
+                #    assert type_ is None, a # matplotlib mlab cohere
                 if not _first:
                     out += ", "
                 if type_ is not None:
