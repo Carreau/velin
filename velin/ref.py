@@ -318,7 +318,7 @@ class SectionFormatter:
                 rest_desc = []
             _first = True
             for ref, type_ in a:
-                #if len(a) > 1:
+                # if len(a) > 1:
                 #    assert type_ is None, a # matplotlib mlab cohere
                 if not _first:
                     out += ", "
@@ -491,7 +491,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
             "cls",
         }
         # don't considert template parameter from numpy/scipy
-        doc_extra = {x for x in doc_extra if not (('$' in x) or ('%' in x))}
+        doc_extra = {x for x in doc_extra if not (("$" in x) or ("%" in x))}
         if len(doc_missing) == len(doc_extra) == 1:
 
             print(fname)
