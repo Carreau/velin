@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .ref import NumpyDocString, main
 
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 
 
 def parse(input):
