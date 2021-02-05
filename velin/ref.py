@@ -719,7 +719,7 @@ def main():
                 return True
         return False
 
-    # need_changes = []
+    need_changes = []
     for file in to_format:
         if to_skip(str(file), patterns):
             print("ignoring", file)
@@ -735,6 +735,7 @@ def main():
         new = reformat_file(data, file, args.compact, args.unsafe, fail=args.fail)
         # test(docstring, file)
         if new != data:
+            need_changes.append(str(file))
 
             dold = data.splitlines()
             dnew = new.splitlines()
@@ -759,7 +760,7 @@ def main():
                 with open(file, "w") as f:
                     f.write(new)
     if args.check:
-        if need_changes:
+        if len(need_changes) != 0:
             sys.exit(
                 "Some files/functions need updates:\n - " + "\n - ".join(need_changes)
             )
