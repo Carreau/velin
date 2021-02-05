@@ -44,6 +44,10 @@ class NodeVisitor(ast.NodeVisitor):
             arg.arg
             for arg in node.args.posonlyargs + node.args.args + node.args.kwonlyargs
         ]
+        if node.args.kwarg:
+            print('** -> ', node.args.kwarg.arg)
+        if node.args.vararg:
+            print('* ->', node.args.vararg.arg)
         #    print(arg.arg)
         #    for k in [l for l in dir(arg) if not l.startswith('_')]:
         #        sub = getattr(arg, k)
@@ -303,7 +307,7 @@ class SectionFormatter:
         return cls.format_See_Also_impl(sas, False, force_compact=compact)
 
     @classmethod
-    def format_See_Also_impl(cls, sas, compact, force_compact):
+    def format_See_Also_impl(cls, sas, compact, force_compact, *varargs, **varkwargs):
         out = "See Also\n"
         out += "--------\n"
 
