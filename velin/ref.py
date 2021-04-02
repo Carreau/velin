@@ -41,13 +41,12 @@ class NodeVisitor(ast.NodeVisitor):
         # node.args.defaults +
 
         meta = [
-            arg.arg
-            for arg in node.args.posonlyargs + node.args.args + node.args.kwonlyargs
+            arg for arg in node.args.posonlyargs + node.args.args + node.args.kwonlyargs
         ]
-        if node.args.kwarg:
-            print('** -> ', node.args.kwarg.arg)
-        if node.args.vararg:
-            print('* ->', node.args.vararg.arg)
+        # if node.args.kwarg:
+        #    print('** -> ', node.args.kwarg.arg)
+        # if node.args.vararg:
+        #    print('* ->', node.args.vararg.arg)
         #    print(arg.arg)
         #    for k in [l for l in dir(arg) if not l.startswith('_')]:
         #        sub = getattr(arg, k)
@@ -484,6 +483,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
 
     doc = NumpyDocString(dedend_docstring(docstr))
     doc.normalize()
+    meta = [m.arg for m in meta]
     if (params := doc["Parameters"]) and meta:
 
         a = [o.strip() for p in params for o in p.name.split(",")]
@@ -513,6 +513,14 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
                 print(f"{fname}:{func_name}")
                 print("  missing:", doc_missing)
                 print("  extra:", doc_extra)
+            if doc_missing and not doc_extra:
+                for param in doc_missing:
+                    doc["Parameters"].append(
+                        nds.Parameter(
+                            param, "INSERT TYPE HERE", ["INSERT LONG DESCRIPTION HERE"]
+                        )
+                    )
+
             elif doc_missing or doc_extra:
                 print(f"{fname}:{func_name}")
                 print("  missing:", doc_missing)
