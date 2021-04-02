@@ -435,7 +435,7 @@ def dedend_docstring(docstring):
     return "\n".join(docstring)
 
 
-def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
+def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=None):
     """
     compute a new docstring that shoudl be numpydoc compliant.
 
@@ -463,6 +463,8 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
         parsed numpydoc object
 
     """
+    assert config is not None
+
     INDENT = level * " "
     NINDENT = "\n" + INDENT
     original_docstr = docstr
@@ -483,17 +485,18 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
 
     doc = NumpyDocString(dedend_docstring(docstr))
     doc.normalize()
-    meta = [m.arg for m in meta]
+    meta_arg = [m.arg for m in meta]
     if (params := doc["Parameters"]) and meta:
 
-        a = [o.strip() for p in params for o in p.name.split(",")]
-        if meta[0] in ["self", "cls"]:
-            meta = meta[1:]
-        doc_missing = set(meta) - set(a) - {"kwargs", "cls"}
-        doc_extra = {x for x in set(a) - set(meta) if not x.startswith("*")} - {
+        a = [o.strip() for p in params for o in p.name.split(",") if p.name]
+        if meta_arg[0] in ["self", "cls"]:
+            meta_arg = meta_arg[1:]
+        doc_missing = set(meta_arg) - set(a) - {"kwargs", "cls"}
+        doc_extra = {x for x in set(a) - set(meta_arg) if not x.startswith("*")} - {
             "kwargs",
             "cls",
         }
+        assert doc_extra != {""}, (set(a), set(meta_arg), params)
         # don't considert template parameter from numpy/scipy
         doc_extra = {x for x in doc_extra if not (("$" in x) or ("%" in x))}
         if len(doc_missing) == len(doc_extra) == 1:
@@ -513,11 +516,19 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
                 print(f"{fname}:{func_name}")
                 print("  missing:", doc_missing)
                 print("  extra:", doc_extra)
-            if doc_missing and not doc_extra:
+            elif doc_missing and not doc_extra and config.with_placeholder:
                 for param in doc_missing:
+                    annotation_str = "<Insert Type here>"
+                    current_param = [m for m in meta if m.arg == param]
+                    assert len(current_param) == 1
+                    current_param = current_param[0]
+                    if type(current_param.annotation).__name__ == "Name":
+                        annotation_str = str(current_param.annotation.id)
                     doc["Parameters"].append(
                         nds.Parameter(
-                            param, "INSERT TYPE HERE", ["INSERT LONG DESCRIPTION HERE"]
+                            param,
+                            f"{annotation_str}",
+                            [f"Multiline Description Here"],
                         )
                     )
 
@@ -565,7 +576,12 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name):
     return fmt, doc
 
 
-def reformat_file(data, filename, compact, unsafe, fail=False):
+def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
+    """
+    Parameters
+    ----------
+    """
+    assert config is not None
 
     tree = ast.parse(data)
     new = data
@@ -602,6 +618,7 @@ def reformat_file(data, filename, compact, unsafe, fail=False):
                 compact=compact,
                 meta=meta,
                 func_name=func_name,
+                config=config,
             )
             if not unsafe:
                 _, d2 = compute_new_doc(
@@ -611,6 +628,7 @@ def reformat_file(data, filename, compact, unsafe, fail=False):
                     compact=compact,
                     meta=meta,
                     func_name=func_name,
+                    config=config,
                 )
                 if not d2._parsed_data == d_._parsed_data:
                     secs1 = {
@@ -697,6 +715,12 @@ def main():
         dest="run_black",
         help="Do not run black on examples",
     )
+    parser.add_argument(
+        "--with-placeholder",
+        action="store_true",
+        dest="with_placeholder",
+        help="insert missing sections/parameters placehoders",
+    )
     parser.add_argument("--no-color", action="store_false", dest="do_highlight")
     parser.add_argument("--compact", action="store_true", help="Please ignore")
     parser.add_argument("--no-fail", action="store_false", dest="fail")
@@ -708,6 +732,11 @@ def main():
     )
 
     args = parser.parse_args()
+
+    from types import SimpleNamespace
+
+    config = SimpleNamespace()
+    config.with_placeholder = args.with_placeholder
     global BLACK_REFORMAT
     if args.run_black:
         BLACK_REFORMAT = True
@@ -744,7 +773,9 @@ def main():
             # continue
             continue
             raise RuntimeError(f"Fail reading {file}") from e
-        new = reformat_file(data, file, args.compact, args.unsafe, fail=args.fail)
+        new = reformat_file(
+            data, file, args.compact, args.unsafe, fail=args.fail, config=config
+        )
         # test(docstring, file)
         if new != data:
             need_changes.append(str(file))
