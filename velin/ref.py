@@ -531,7 +531,17 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
                             [f"<Multiline Description Here>"],
                         )
                     )
-
+            elif not doc_missing and doc_extra and "Parameters" in doc:
+                to_remove = [p for p in doc["Parameters"] if p[0] in doc_extra]
+                for remove_me in to_remove:
+                    if (
+                        " " in remove_me.name
+                        and not remove_me.type
+                        and not remove_me.desc
+                    ):
+                        # this is likely some extra text
+                        continue
+                    doc["Parameters"].remove(remove_me)
             elif doc_missing or doc_extra:
                 print(f"{fname}:{func_name}")
                 print("  missing:", doc_missing)
