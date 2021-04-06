@@ -528,7 +528,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
                         nds.Parameter(
                             param,
                             f"{annotation_str}",
-                            [f"Multiline Description Here"],
+                            [f"<Multiline Description Here>"],
                         )
                     )
 
