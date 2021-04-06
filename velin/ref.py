@@ -585,7 +585,12 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
                         [f"<Multiline Description Here>"],
                     )
                 )
-        elif not doc_missing and doc_extra and "Parameters" in doc:
+        elif (
+            (not doc_missing)
+            and doc_extra
+            and ("Parameters" in doc)
+            and (not meta["varkwargs"])
+        ):
             print("removing parameters", doc_extra)
             to_remove = [p for p in doc["Parameters"] if p[0] in doc_extra]
             for remove_me in to_remove:
