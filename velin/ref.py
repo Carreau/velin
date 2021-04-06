@@ -514,7 +514,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
     if (params := doc["Parameters"]) and meta:
 
         a = [o.strip() for p in params for o in p.name.split(",") if p.name]
-        if meta_arg[0] in ["self", "cls"]:
+        if meta_arg and meta_arg[0] in ["self", "cls"]:
             meta_arg = meta_arg[1:]
         doc_missing = set(meta_arg) - set(a) - {"cls"}
         doc_extra = {x for x in set(a) - set(meta_arg) if not x.startswith("*")} - {
