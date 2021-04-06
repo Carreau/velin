@@ -475,6 +475,8 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
         list of parameters.
     func_name : str
         function name for debug.
+    config : <Insert Type here>
+        <Multiline Description Here>
 
     Returns
     -------
@@ -490,7 +492,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
     NINDENT = "\n" + INDENT
     original_docstr = docstr
     if len(docstr.splitlines()) <= 1:
-        return "", NumpyDocString("")
+        return "", NumpyDocString(""), None
     shortdoc = bool(docstr.splitlines()[0].strip())
     short_with_space = False
     if not docstr.startswith(NINDENT):
@@ -511,6 +513,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
         meta_arg.append("*" + meta["varargs"].arg)
     if meta["varkwargs"]:
         meta_arg.append("**" + meta["varkwargs"].arg)
+    jtl = False
     if (params := doc["Parameters"]) and meta:
 
         a = [o.strip() for p in params for o in p.name.split(",") if p.name]
@@ -520,6 +523,9 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
         doc_extra = {x for x in set(a) - set(meta_arg) if not x.startswith("*")} - {
             "cls",
         }
+        for p in doc["Parameters"]:
+            if p[1].startswith("<"):
+                jtl = True
         assert doc_extra != {""}, (set(a), set(meta_arg), params)
         # don't considert template parameter from numpy/scipy
         doc_extra = {x for x in doc_extra if not (("$" in x) or ("%" in x))}
@@ -632,13 +638,26 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
     assert fmt
     # we can't just do that as See Also and a few other would be sphinxified.
     # return indent(str(doc),'    ')+'\n    '
-    return fmt, doc
+    return fmt, doc, jtl
 
 
 def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
     """
     Parameters
     ----------
+    compact : <Insert Type here>
+        <Multiline Description Here>
+    data : <Insert Type here>
+        <Multiline Description Here>
+    unsafe : <Insert Type here>
+        <Multiline Description Here>
+    fail : <Insert Type here>
+        <Multiline Description Here>
+    config : <Insert Type here>
+        <Multiline Description Here>
+    filename : <Insert Type here>
+        <Multiline Description Here>
+
     """
     assert config is not None
 
@@ -670,7 +689,7 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
         # if not docstring in data:
         #    print(f"skip {file}: {func.name}, can't do replacement yet")
         try:
-            new_doc, d_ = compute_new_doc(
+            new_doc, d_, jump_to_loc = compute_new_doc(
                 docstring,
                 filename,
                 level=nindent,
@@ -679,8 +698,12 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
                 func_name=func_name,
                 config=config,
             )
-            if not unsafe:
-                _, d2 = compute_new_doc(
+            if jump_to_loc:
+                print("mvim", f"+{start}", filename)
+                pass
+                # call editor with file and line number
+            elif not unsafe:
+                _, d2, _ = compute_new_doc(
                     docstring,
                     filename,
                     level=nindent,
