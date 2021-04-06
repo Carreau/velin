@@ -766,7 +766,7 @@ def main():
         for p in patterns:
             if not p:
                 continue
-            if re.match(".+" + p + ".+", file):
+            if re.match(".*" + p + ".*", file):
                 return True
         return False
 
