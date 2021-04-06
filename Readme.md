@@ -12,72 +12,56 @@ French for Vellum
 You may need to get a modified version of numpydoc depending on the stage of development.
 
 ```
-# clone this repo
-# cd this repo
-pip install flit
-flit install --symlink
+$ git clone https://github.com/Carreau/velin
+$ cd velin
+$ pip install flit
+$ flit install --symlink
 ```
 
-## Autoreformat docstrings in minirst/ref.py
+## Autoreformat docstrings
+
+This assume your docstrings are in RST/Numpydoc format, and will try to fix
+common formatting mistakes and typo.
+
 
 ```
-velin [--write] path-to-file.py or path-to-dir
+velin [--write] <path-to-file.py> or <path-to-dir>
 ```
 
 Without `--write` vélin will print the suggested diff, with `--write` it will _attempt_  to update the files.
 
 ## options
 
+(likely not up to date, make sure to run `velin --help` to check for new,changed
+or removed options)
+
 ```
 $ velin --help
-usage: velin [-h] [--context context] [--unsafe] [--check] [--no-diff] [--no-color] [--write] path [path ...]
+usage: velin [-h] [--context context] [--unsafe] [--check] [--no-diff] [--black] [--with-placeholder] [--no-color] [--compact] [--no-fail] [--write]
+             path [path ...]
 
 reformat the docstrigns of some file
 
 positional arguments:
-  files              Files or folder to reformat
+  path                Files or folder to reformat
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --context context  Number of context lines in the diff
-  --unsafe           Lift some safety feature (don't fail if updating the docstring is not indempotent
-  --check            Print the list of files/lines number and exit with a non-0 exit status, Use it for CI.
-  --no-diff          Do not print the diff
+  -h, --help          show this help message and exit
+  --context context   Number of context lines in the diff
+  --unsafe            Lift some safety feature (don't fail if updating the docstring is not indempotent
+  --check             Print the list of files/lines number and exit with a non-0 exit status, Use it for CI.
+  --no-diff           Do not print the diff
+  --black             Do not run black on examples
+  --with-placeholder  insert missing sections/parameters placehoders
   --no-color
-  --write            Try to write the updated docstring to the files
+  --compact           Please ignore
+  --no-fail
+  --write             Try to write the updated docstring to the files
 ```
 
 
+## kind of things it fixes
 
-## other things part of this repo that will need to be pulled out at some point
-
-### Not Sphinx
-
-A project which is not sphinx (for current lack of a better name), it is _not meant_ to be a Sphinx replacement either
-but to explore a different approach; mainly:
-
-- Be more Python Specific; by knowing more about the language you can usually be smarter and simpler. 
-- Separate documentation gathering, and building from rendering. 
-  - Go from source to IR
-  - From IR to final HTML – without extension execution. 
-- Potentially offer a docstring reformatter (!not a linter), that can reformat docstrings automatically to follow
-  numpydoc conventions.
-
-This should hopefully allow a conda-forge-like model, where project upload their IR to a given repo, and a _single
-website_ that contain multiple project documentation (without sub domains) can be build with better cross link between
-project and _efficient_ page rebuild. 
-
-This should also allow to reder documentation on _non html_ backend (think terminal), or provide documentation if
-IDE (Spyder/Jupyterlab), without having to iframe it. 
-
-### Usage
-
-Still quite hackish for now:
-
-```bash
-$ mkdir html
-$ rm htmls/*.html
-$ python gen.py
-```
-
-
+ - Spacing around colon, 
+ - If one parameter has typo wrt function signature: fix it.
+ - Insert all missing parameters with placeholders.
