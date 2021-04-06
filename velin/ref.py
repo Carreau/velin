@@ -650,7 +650,7 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
                         + str(secs2),
                     )
         except Exception as e:
-            print(f"somethign went wrong with {filename}:{docstring}")
+            print(f"something went wrong with {filename}:{docstring}")
             if fail:
                 raise
             continue
