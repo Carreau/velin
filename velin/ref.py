@@ -556,25 +556,35 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
                     )
                     doc_missing.remove(correct)
                     doc_extra.remove(incorrect)
+            for param in list(doc_extra):
+                if (
+                    param.startswith(('"', "'"))
+                    and param.endswith(('"', "'"))
+                    and param[1:-1] in doc_missing
+                ):
+                    correct = param[1:-1]
+                    rename_param(param, correct)
+                    print("unquote", param, "to", correct)
+                    doc_missing.remove(correct)
+                    doc_extra.remove(param)
+
             if len(doc_missing) == len(doc_extra) == 1:
                 correct = list(doc_missing)[0]
                 incorrect = list(doc_extra)[0]
                 if rename_param(incorrect, correct ):
-                    print(
-                        f"renamed {incorrect!r} to {correct!r}")
+                    print(f"{fname}:{func_name}")
+                    print(f"    renamed {incorrect!r} to {correct!r}")
                     doc_missing = {}
                     doc_extra = {}
                 else:
                     print("  could not fix:", doc_missing, doc_extra)
-            else:
-                print(f"{fname}:{func_name}")
-                print("  missing:", doc_missing)
-                print("  extra:", doc_extra)
         if doc_missing and not doc_extra and config.with_placeholder:
             for param in doc_missing:
+                if "*" in param:
+                    continue
                 annotation_str = "<Insert Type here>"
-                current_param = [m for m in meta if m.arg == param]
-                assert len(current_param) == 1
+                current_param = [m for m in meta["simple"] if m.arg == param]
+                assert len(current_param) == 1, (current_param, meta, param)
                 current_param = current_param[0]
                 if type(current_param.annotation).__name__ == "Name":
                     annotation_str = str(current_param.annotation.id)
@@ -591,7 +601,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
             and ("Parameters" in doc)
             and (not meta["varkwargs"])
         ):
-            print("removing parameters", doc_extra)
+            print(f"{fname}:{func_name}")
             to_remove = [p for p in doc["Parameters"] if p[0] in doc_extra]
             for remove_me in to_remove:
                 if (
@@ -601,11 +611,14 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
                 ):
                     # this is likely some extra text
                     continue
+                print("    removing parameters", remove_me.name)
                 doc["Parameters"].remove(remove_me)
         elif doc_missing or doc_extra:
             print(f"{fname}:{func_name}")
-            print("  missing:", doc_missing)
-            print("  extra:", doc_extra)
+            if doc_missing:
+                print("  missing:", doc_missing)
+            if doc_extra:
+                print("  extra:", doc_extra)
 
     fmt = ""
     start = True
