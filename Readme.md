@@ -67,7 +67,9 @@ Ignore files with comma separated ignore_patterns
 
 ```
 [velin]
-ignore_patterns = path/to/a,path/to/b
+ignore_patterns = 
+   path/to/a.py:Class.func
+   path/to/b.py:Class.func
 ```
 
 ## kind of things it fixes

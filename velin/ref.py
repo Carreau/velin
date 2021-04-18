@@ -35,8 +35,41 @@ def f(a, b, *args, **kwargs):
 
 
 class NodeVisitor(ast.NodeVisitor):
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.items = []
+        self.stack = []
+
+    def visit(self, node):
+        if type(node) in (ast.ClassDef, ast.FunctionDef):
+            self.stack.append(node.name)
+            # print(self.stack)
+            oname = ".".join(self.stack)
+            if oname in self.config["skip"]:
+                print("SKIPPPING", oname)
+                self.stack.pop()
+                return
+            super().visit(node)
+            self.stack.pop()
+        elif type(node) in (
+            ast.Load,
+            ast.Name,
+            ast.Call,
+            ast.Compare,
+            ast.Attribute,
+            ast.Expr,
+            ast.arguments,
+            ast.Import,
+            ast.alias,
+            ast.Constant,
+            ast.Store,
+            ast.Assign,
+            ast.arg,
+        ):
+            super().visit(node)
+        else:
+            # print(type(node))
+            super().visit(node)
 
     def visit_FunctionDef(self, node):
         # we can collect function args, and _could_ check the Parameter section.
@@ -73,7 +106,7 @@ class NodeVisitor(ast.NodeVisitor):
         #        sub = getattr(arg, k)
         #        print('    ', k, sub)
 
-        self.items.append((node, meta))
+        self.items.append((node, meta, ".".join(self.stack)))
         self.generic_visit(node)
 
     def visit_ClassDef(self, node):
@@ -114,10 +147,17 @@ class NumpyDocString(nds.NumpyDocString):
         """
         if (params := self["Parameters"]) :
             for i, p in enumerate(params):
-                if not p.type and ":" in p.name:
+                if not p.type and (":" in p.name) and not p.name.endswith(":"):
                     if p.name.startswith(".."):
                         continue
-                    name, type_ = [_.strip() for _ in p.name.split(":", maxsplit=1)]
+                    if re.match(":\w+:`", p.name):
+                        print("may have a directive", p.name)
+                    try:
+                        name, type_ = [
+                            _.strip() for _ in p.name.split(": ", maxsplit=1)
+                        ]
+                    except Exception as e:
+                        raise type(e)(p.name)
                     params[i] = nds.Parameter(name, type_, p[2])
 
     def parse_examples(self, lines, indent=4):
@@ -431,6 +471,10 @@ class SectionFormatter:
         for i, p in enumerate(ps):
             # if i:
             #    out += "\n"
+            if p.type and re.match("\w+:`", p.type):
+                print(
+                    "Warning numpydoc may have misparsed this section.", p.name, p.type
+                )
             if p.name and p.type:
                 out += f"""{p.name.strip()} : {p.type.strip()}\n"""
             elif p.name:
@@ -545,16 +589,14 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
             # we need to match them maybe:
             # are we missing *, ** in args, and kwargs ?
 
-            for stars in ('*', '**'):
+            for stars in ("*", "**"):
                 n_star_missing = doc_missing.intersection(
                     {stars + k for k in doc_extra}
                 )
                 if n_star_missing:
                     correct = list(n_star_missing)[0]
-                    incorrect = correct[len(stars):]
-                    rename_param(
-                        incorrect, correct 
-                    )
+                    incorrect = correct[len(stars) :]
+                    rename_param(incorrect, correct)
                     doc_missing.remove(correct)
                     doc_extra.remove(incorrect)
             for param in list(doc_extra):
@@ -612,11 +654,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
             print(f"{fname}:{func_name}")
             to_remove = [p for p in doc["Parameters"] if p[0] in doc_extra]
             for remove_me in to_remove:
-                if (
-                    " " in remove_me.name
-                    and not remove_me.type
-                    and not remove_me.desc
-                ):
+                if " " in remove_me.name and not remove_me.type and not remove_me.desc:
                     # this is likely some extra text
                     continue
                 print("    removing parameters", remove_me.name)
@@ -667,15 +705,15 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
     return fmt, doc, jtl
 
 
-def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
+def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_p=None):
     """
     Parameters
     ----------
-    compact : <Insert Type here>
-        <Multiline Description Here>
+    compact : bool
+        wether to use compact formatting
     data : <Insert Type here>
         <Multiline Description Here>
-    unsafe : <Insert Type here>
+    unsafe : bool
         <Multiline Description Here>
     fail : <Insert Type here>
         <Multiline Description Here>
@@ -691,10 +729,10 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
     new = data
 
     # funcs = [t for t in tree.body if isinstance(t, ast.FunctionDef)]
-    funcs = NodeVisitor()
+    funcs = NodeVisitor(config={"skip": obj_p})
     funcs.visit(tree)
     funcs = funcs.items
-    for i, (func, meta) in enumerate(funcs[:]):
+    for i, (func, meta, qname) in enumerate(funcs[:]):
         # print(i, "==", func.name, "==")
         try:
             e0 = func.body[0]
@@ -758,7 +796,7 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
                         + str(secs2),
                     )
         except Exception as e:
-            print(f"something went wrong with {filename}:{docstring}")
+            print(f"something went wrong with {filename}:{qname} :\n\n{docstring}")
             if fail:
                 raise
             continue
@@ -779,14 +817,30 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None):
     return new
 
 
+class SkipPattern:
+    def __init__(self, value):
+        if ":" in value:
+            self.file_pattern, self.obj_pattern = value.split(":")
+        else:
+            self.file_pattern, self.obj_pattern = value, None
+
+    @property
+    def file(self):
+        if "*" in self.file_pattern:
+            return self.file_pattern + ""
+        else:
+            return ".*" + self.file_pattern + ".*"
+
+
 def main():
     config = ConfigParser()
     patterns = []
     if Path("setup.cfg").exists():
         config.read("setup.cfg")
         patterns = [
-            x.strip()
-            for x in config.get("velin", "ignore_patterns", fallback="").split(",")
+            SkipPattern(x.strip())
+            for x in config.get("velin", "ignore_patterns", fallback="").split("\n")
+            if x
         ]
 
     parser = argparse.ArgumentParser(description="reformat the docstrigns of some file")
@@ -865,10 +919,11 @@ def main():
 
     def to_skip(file, patterns):
         for p in patterns:
-            if not p:
-                continue
-            if re.match(".*" + p + ".*", file):
-                return True
+            if re.match(p.file, file):
+                if p.obj_pattern is None:
+                    return True
+                else:
+                    return False
         return False
 
     need_changes = []
@@ -884,8 +939,16 @@ def main():
             # continue
             continue
             raise RuntimeError(f"Fail reading {file}") from e
+
+        obj_p = [p.obj_pattern for p in patterns if re.match(p.file, str(file))]
         new = reformat_file(
-            data, file, args.compact, args.unsafe, fail=args.fail, config=config
+            data,
+            file,
+            args.compact,
+            args.unsafe,
+            fail=args.fail,
+            config=config,
+            obj_p=obj_p,
         )
         # test(docstring, file)
         if new != data:
