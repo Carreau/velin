@@ -102,6 +102,7 @@ class NumpyDocString(nds.NumpyDocString):
             "parmeters",
             "paramerters",
             "arguments",
+            "args",
         ),
         "Attributes": ("properties",),
         "Yields": ("signals",),
