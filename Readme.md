@@ -60,6 +60,16 @@ optional arguments:
 ```
 
 
+## setup.cfg
+
+
+Ignore files with comma separated ignore_patterns
+
+```
+[velin]
+ignore_patterns = path/to/a,path/to/b
+```
+
 ## kind of things it fixes
 
  - Spacing around colon, 

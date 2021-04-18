@@ -572,13 +572,20 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
             if len(doc_missing) == len(doc_extra) == 1:
                 correct = list(doc_missing)[0]
                 incorrect = list(doc_extra)[0]
-                if rename_param(incorrect, correct ):
-                    print(f"{fname}:{func_name}")
-                    print(f"    renamed {incorrect!r} to {correct!r}")
-                    doc_missing = {}
-                    doc_extra = {}
-                else:
-                    print("  could not fix:", doc_missing, doc_extra)
+                do_rename = True
+                if "*" in correct and ("*" not in incorrect):
+                    if correct.replace("*", "") != incorrect.replace("*", ""):
+                        # this is likely undocumented **kwargs.
+                        do_rename = False
+
+                if do_rename:
+                    if rename_param(incorrect, correct):
+                        print(f"{fname}:{func_name}")
+                        print(f"    renamed {incorrect!r} to {correct!r}")
+                        doc_missing = {}
+                        doc_extra = {}
+                    else:
+                        print("  could not fix:", doc_missing, doc_extra)
         if doc_missing and not doc_extra and config.with_placeholder:
             for param in doc_missing:
                 if "*" in param:
@@ -777,7 +784,10 @@ def main():
     patterns = []
     if Path("setup.cfg").exists():
         config.read("setup.cfg")
-        patterns = config.get("velin", "ignore_patterns", fallback="").split(",")
+        patterns = [
+            x.strip()
+            for x in config.get("velin", "ignore_patterns", fallback="").split(",")
+        ]
 
     parser = argparse.ArgumentParser(description="reformat the docstrigns of some file")
     parser.add_argument(
