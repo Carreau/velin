@@ -31,6 +31,11 @@ def f(a, b, *args, **kwargs):
         var
     kwargs : stuff
         kwargs
+
+    See Also
+    --------
+    a, b, c
+
     """
 
 
@@ -289,7 +294,9 @@ class Config:
 
     """
 
-    compact_param = True
+    _compact_param = True
+    _space_in_see_also_title = False
+    _space_in_notes_title = False
 
     def __init__(self, conf):
         self._conf = conf
@@ -298,7 +305,7 @@ class Config:
         if key in self._conf:
             return self._conf[key]
         else:
-            return getattr(type(self), key)
+            return getattr(type(self), "_" + key)
 
 
 class SectionFormatter:
@@ -360,18 +367,18 @@ class SectionFormatter:
     def format_Other_Parameters(self, ps, compact):
         return self._format_ps("Other Parameters", ps, compact)
 
-    @classmethod
-    def format_See_Also(cls, sas, compact):
+    def format_See_Also(self, sas, compact):
 
-        res = cls.format_See_Also_impl(sas, True, force_compact=compact)
+        res = self.format_See_Also_impl(sas, True, force_compact=compact)
         if res is not None:
             return res
-        return cls.format_See_Also_impl(sas, False, force_compact=compact)
+        return self.format_See_Also_impl(sas, False, force_compact=compact)
 
-    @classmethod
-    def format_See_Also_impl(cls, sas, compact, force_compact, *varargs, **varkwargs):
+    def format_See_Also_impl(self, sas, compact, force_compact, *varargs, **varkwargs):
         out = "See Also\n"
         out += "--------\n"
+        if self.config.space_in_see_also_title:
+            out += "\n"
 
         for a, b in sas:
             if b:
@@ -415,10 +422,11 @@ class SectionFormatter:
         out += "\n"
         return out
 
-    @classmethod
-    def format_Notes(cls, lines, compact):
+    def format_Notes(self, lines, compact):
         out = "Notes\n"
         out += "-----\n"
+        if self.config.space_in_notes_title:
+            out += "\n"
         out += "\n".join(lines)
         out += "\n"
         return out
@@ -502,7 +510,7 @@ def dedend_docstring(docstring):
     return "\n".join(docstring)
 
 
-def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=None):
+def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
     """
     compute a new docstring that shoudl be numpydoc compliant.
 
@@ -670,7 +678,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
     fmt = ""
     start = True
     # ordered_section is a local patch to that records the docstring order.
-    df = SectionFormatter(conf=Config({"compact_param": compact}))
+    df = SectionFormatter(conf=config)
     for s in getattr(doc, "ordered_sections", doc.sections):
         if doc[s]:
             f = getattr(df, "format_" + s.replace(" ", "_"))
@@ -727,7 +735,7 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_
     new = data
 
     # funcs = [t for t in tree.body if isinstance(t, ast.FunctionDef)]
-    funcs = NodeVisitor(config={"skip": obj_p})
+    funcs = NodeVisitor({"skip": obj_p})
     funcs.visit(tree)
     funcs = funcs.items
     for i, (func, meta, qname) in enumerate(funcs[:]):
@@ -831,13 +839,13 @@ class SkipPattern:
 
 
 def main():
-    config = ConfigParser()
+    _config = ConfigParser()
     patterns = []
     if Path("setup.cfg").exists():
-        config.read("setup.cfg")
+        _config.read("setup.cfg")
         patterns = [
             SkipPattern(x.strip())
-            for x in config.get("velin", "ignore_patterns", fallback="").split("\n")
+            for x in _config.get("velin", "ignore_patterns", fallback="").split("\n")
             if x
         ]
 
@@ -888,6 +896,12 @@ def main():
     parser.add_argument("--compact", action="store_true", help="Please ignore")
     parser.add_argument("--no-fail", action="store_false", dest="fail")
     parser.add_argument(
+        "--space-in-see-also-title", action="store_true", dest="space_in_see_also_title"
+    )
+    parser.add_argument(
+        "--space-in-notes-title", action="store_true", dest="space_in_notes_title"
+    )
+    parser.add_argument(
         "--write",
         dest="write",
         action="store_true",
@@ -898,8 +912,15 @@ def main():
 
     from types import SimpleNamespace
 
-    config = SimpleNamespace()
-    config.with_placeholder = args.with_placeholder
+    config = Config(
+        {
+            "with_placeholder": args.with_placeholder,
+            "compact_param": args.compact,
+            "space_in_see_also_title": args.space_in_see_also_title,
+            "space_in_notes_title": args.space_in_notes_title,
+        }
+    )
+    print(config, config.space_in_notes_title, args)
     global BLACK_REFORMAT
     if args.run_black:
         BLACK_REFORMAT = True
