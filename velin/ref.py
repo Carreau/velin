@@ -335,7 +335,7 @@ class SectionFormatter:
 
     def _format_ps(self, name, ps, compact):
         res, try_other = self._format_ps_pref(name, ps, compact=True)
-        if not try_other and self.config.compact_param:
+        if not try_other or self.config.compact_param:
             return res
         return self._format_ps_pref(name, ps, compact=False)[0]
 
