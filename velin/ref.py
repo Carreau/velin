@@ -277,7 +277,7 @@ def w(orig):
     return lll
 
 
-class Conf:
+class Config:
     """
 
     Here are some of the config options
@@ -289,15 +289,16 @@ class Conf:
 
     """
 
-    defaults = {"F100": "A"}
+    compact_param = True
 
     def __init__(self, conf):
         self._conf = conf
 
     def __getattr__(self, key):
-        k = key[:-1]
-        v = key[-1]
-        return self._conf.get(k, self.defaults[k]) == v
+        if key in self._conf:
+            return self._conf[key]
+        else:
+            return getattr(type(self), key)
 
 
 class SectionFormatter:
@@ -308,7 +309,8 @@ class SectionFormatter:
     """
 
     def __init__(self, *, conf):
-        self.config = Conf(conf)
+        assert isinstance(conf, Config)
+        self.config = conf
 
     @classmethod
     def format_Signature(self, s, compact):
@@ -325,9 +327,8 @@ class SectionFormatter:
         return "\n".join(es) + "\n"
 
     def _format_ps(self, name, ps, compact):
-        force_compact = self.config.F100B
         res, try_other = self._format_ps_pref(name, ps, compact=True)
-        if (not try_other and self.config.F100A) or self.config.F100B:
+        if not try_other and self.config.compact_param:
             return res
         return self._format_ps_pref(name, ps, compact=False)[0]
 
@@ -669,10 +670,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config=No
     fmt = ""
     start = True
     # ordered_section is a local patch to that records the docstring order.
-    if compact:
-        df = SectionFormatter(conf={"F100": "B"})
-    else:
-        df = SectionFormatter(conf={"F100": "A"})
+    df = SectionFormatter(conf=Config({"compact_param": compact}))
     for s in getattr(doc, "ordered_sections", doc.sections):
         if doc[s]:
             f = getattr(df, "format_" + s.replace(" ", "_"))
