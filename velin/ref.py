@@ -539,6 +539,7 @@ def dedend_docstring(docstring):
 
 
 def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
+    assert "Parameters" in doc
     jump_to_location = False
     if not config.run_fixers:
         return params, jump_to_location
@@ -627,7 +628,7 @@ def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
     elif (
         (not doc_missing)
         and doc_extra
-        and ("Parameters" in doc)
+        and ("Parameters" in doc)  # always True
         and (not meta["varkwargs"])
     ):
         print(f"{fname}:{func_name}")
