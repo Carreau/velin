@@ -940,7 +940,12 @@ def main():
     parser.add_argument(
         "--space-in-notes-title", action="store_true", dest="space_in_notes_title"
     )
-    parser.add_argument("--no-fixers", action="store_false", dest="run_fixers")
+    parser.add_argument(
+        "--no-fixers",
+        action="store_false",
+        dest="run_fixers",
+        help="try to only reformat and does not run fixers heuristics",
+    )
     parser.add_argument(
         "--write",
         dest="write",

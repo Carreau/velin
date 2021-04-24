@@ -6,4 +6,4 @@
     language_version: python3
     types: [text]
     types_or: [python]
-    args: ["--write"]
+    args: ["--write","--no-fixers"]
