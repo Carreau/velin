@@ -23,7 +23,7 @@ def f(a, b, *args, **kwargs):
     """
     Parameters
     ----------
-    a : int
+    a: int
         its a
     u : int
         its b
@@ -700,7 +700,8 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
         long_with_space = False
 
     doc = NumpyDocString(dedend_docstring(docstr))
-    doc.normalize()
+    if config.run_fixers:
+        doc.normalize()
     meta_arg = [m.arg for m in meta["simple"]]
     if meta["varargs"]:
         meta_arg.append("*" + meta["varargs"].arg)
