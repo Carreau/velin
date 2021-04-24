@@ -920,7 +920,6 @@ def main():
             "space_in_notes_title": args.space_in_notes_title,
         }
     )
-    print(config, config.space_in_notes_title, args)
     global BLACK_REFORMAT
     if args.run_black:
         BLACK_REFORMAT = True
