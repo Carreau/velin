@@ -32,6 +32,33 @@ def f(a, b, *args, **kwargs):
     kwargs : stuff
         kwargs
 
+    Returns
+    -------
+    nothing: None
+
+    See Also
+    --------
+    a, b, c
+
+    """
+
+
+def g(a, b):
+    """
+    Parameters
+    ----------
+    a : int
+        its a
+    b : int
+        its b
+    args : stuff
+        var
+    kwargs : stuff
+        kwargs
+    Returns
+    -------
+    nothing: None
+
     See Also
     --------
     a, b, c
@@ -297,6 +324,7 @@ class Config:
     _compact_param = True
     _space_in_see_also_title = False
     _space_in_notes_title = False
+    _run_fixers = True
 
     def __init__(self, conf):
         self._conf = conf
@@ -510,6 +538,116 @@ def dedend_docstring(docstring):
     return "\n".join(docstring)
 
 
+def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
+    jump_to_location = False
+    if not config.run_fixers:
+        return params, jump_to_location
+    pnames = [o.strip() for p in params for o in p.name.split(",") if p.name]
+    if meta_arg and meta_arg[0] in ["self", "cls"]:
+        meta_arg = meta_arg[1:]
+    doc_missing = set(meta_arg) - set(pnames) - {"cls"}
+    doc_extra = {x for x in set(pnames) - set(meta_arg) if not x.startswith("*")} - {
+        "cls",
+    }
+    for p in params:
+        if p[1].startswith("<"):
+            jump_to_location = True
+    assert doc_extra != {""}, (set(a), set(meta_arg), params)
+    # don't considert template parameter from numpy/scipy
+    doc_extra = {x for x in doc_extra if not (("$" in x) or ("%" in x))}
+
+    def rename_param(source, target):
+        renamed = False
+        for i, p in enumerate(params):
+            if p.name == source:
+                name = p.name
+                params[i] = nds.Parameter(target, *p[1:])
+                renamed = True
+                break
+        return renamed
+
+    if doc_missing and doc_extra:
+        # we need to match them maybe:
+        # are we missing *, ** in args, and kwargs ?
+
+        for stars in ("*", "**"):
+            n_star_missing = doc_missing.intersection({stars + k for k in doc_extra})
+            if n_star_missing:
+                correct = list(n_star_missing)[0]
+                incorrect = correct[len(stars) :]
+                rename_param(incorrect, correct)
+                doc_missing.remove(correct)
+                doc_extra.remove(incorrect)
+        for param in list(doc_extra):
+            if (
+                param.startswith(('"', "'"))
+                and param.endswith(('"', "'"))
+                and param[1:-1] in doc_missing
+            ):
+                correct = param[1:-1]
+                rename_param(param, correct)
+                print("unquote", param, "to", correct)
+                doc_missing.remove(correct)
+                doc_extra.remove(param)
+
+        if len(doc_missing) == len(doc_extra) == 1:
+            correct = list(doc_missing)[0]
+            incorrect = list(doc_extra)[0]
+            do_rename = True
+            if "*" in correct and ("*" not in incorrect):
+                if correct.replace("*", "") != incorrect.replace("*", ""):
+                    # this is likely undocumented **kwargs.
+                    do_rename = False
+
+            if do_rename:
+                if rename_param(incorrect, correct):
+                    print(f"{fname}:{func_name}")
+                    print(f"    renamed {incorrect!r} to {correct!r}")
+                    doc_missing = {}
+                    doc_extra = {}
+                else:
+                    print("  could not fix:", doc_missing, doc_extra)
+    if doc_missing and not doc_extra and config.with_placeholder:
+        for param in doc_missing:
+            if "*" in param:
+                continue
+            annotation_str = "<Insert Type here>"
+            current_param = [m for m in meta["simple"] if m.arg == param]
+            assert len(current_param) == 1, (current_param, meta, param)
+            current_param = current_param[0]
+            if type(current_param.annotation).__name__ == "Name":
+                annotation_str = str(current_param.annotation.id)
+            doc["Parameters"].append(
+                nds.Parameter(
+                    param,
+                    f"{annotation_str}",
+                    [f"<Multiline Description Here>"],
+                )
+            )
+    elif (
+        (not doc_missing)
+        and doc_extra
+        and ("Parameters" in doc)
+        and (not meta["varkwargs"])
+    ):
+        print(f"{fname}:{func_name}")
+        to_remove = [p for p in doc["Parameters"] if p[0] in doc_extra]
+        for remove_me in to_remove:
+            if " " in remove_me.name and not remove_me.type and not remove_me.desc:
+                # this is likely some extra text
+                continue
+            print("    removing parameters", remove_me.name)
+            params.remove(remove_me)
+    elif doc_missing or doc_extra:
+        print(f"{fname}:{func_name}")
+        if doc_missing:
+            print("  missing:", doc_missing)
+        if doc_extra:
+            print("  extra:", doc_extra)
+
+    return params, jump_to_location
+
+
 def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
     """
     compute a new docstring that shoudl be numpydoc compliant.
@@ -567,113 +705,13 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
         meta_arg.append("*" + meta["varargs"].arg)
     if meta["varkwargs"]:
         meta_arg.append("**" + meta["varkwargs"].arg)
-    jtl = False
+
+    jump_to_location = False
     if (params := doc["Parameters"]) and meta:
 
-        a = [o.strip() for p in params for o in p.name.split(",") if p.name]
-        if meta_arg and meta_arg[0] in ["self", "cls"]:
-            meta_arg = meta_arg[1:]
-        doc_missing = set(meta_arg) - set(a) - {"cls"}
-        doc_extra = {x for x in set(a) - set(meta_arg) if not x.startswith("*")} - {
-            "cls",
-        }
-        for p in doc["Parameters"]:
-            if p[1].startswith("<"):
-                jtl = True
-        assert doc_extra != {""}, (set(a), set(meta_arg), params)
-        # don't considert template parameter from numpy/scipy
-        doc_extra = {x for x in doc_extra if not (("$" in x) or ("%" in x))}
-
-        def rename_param(source, target):
-            renamed = False
-            for i, p in enumerate(doc["Parameters"]):
-                if p.name == source:
-                    name = p.name
-                    doc["Parameters"][i] = nds.Parameter(target, *p[1:])
-                    renamed = True
-                    break
-            return renamed
-
-        if doc_missing and doc_extra:
-            # we need to match them maybe:
-            # are we missing *, ** in args, and kwargs ?
-
-            for stars in ("*", "**"):
-                n_star_missing = doc_missing.intersection(
-                    {stars + k for k in doc_extra}
-                )
-                if n_star_missing:
-                    correct = list(n_star_missing)[0]
-                    incorrect = correct[len(stars) :]
-                    rename_param(incorrect, correct)
-                    doc_missing.remove(correct)
-                    doc_extra.remove(incorrect)
-            for param in list(doc_extra):
-                if (
-                    param.startswith(('"', "'"))
-                    and param.endswith(('"', "'"))
-                    and param[1:-1] in doc_missing
-                ):
-                    correct = param[1:-1]
-                    rename_param(param, correct)
-                    print("unquote", param, "to", correct)
-                    doc_missing.remove(correct)
-                    doc_extra.remove(param)
-
-            if len(doc_missing) == len(doc_extra) == 1:
-                correct = list(doc_missing)[0]
-                incorrect = list(doc_extra)[0]
-                do_rename = True
-                if "*" in correct and ("*" not in incorrect):
-                    if correct.replace("*", "") != incorrect.replace("*", ""):
-                        # this is likely undocumented **kwargs.
-                        do_rename = False
-
-                if do_rename:
-                    if rename_param(incorrect, correct):
-                        print(f"{fname}:{func_name}")
-                        print(f"    renamed {incorrect!r} to {correct!r}")
-                        doc_missing = {}
-                        doc_extra = {}
-                    else:
-                        print("  could not fix:", doc_missing, doc_extra)
-        if doc_missing and not doc_extra and config.with_placeholder:
-            for param in doc_missing:
-                if "*" in param:
-                    continue
-                annotation_str = "<Insert Type here>"
-                current_param = [m for m in meta["simple"] if m.arg == param]
-                assert len(current_param) == 1, (current_param, meta, param)
-                current_param = current_param[0]
-                if type(current_param.annotation).__name__ == "Name":
-                    annotation_str = str(current_param.annotation.id)
-                doc["Parameters"].append(
-                    nds.Parameter(
-                        param,
-                        f"{annotation_str}",
-                        [f"<Multiline Description Here>"],
-                    )
-                )
-        elif (
-            (not doc_missing)
-            and doc_extra
-            and ("Parameters" in doc)
-            and (not meta["varkwargs"])
-        ):
-            print(f"{fname}:{func_name}")
-            to_remove = [p for p in doc["Parameters"] if p[0] in doc_extra]
-            for remove_me in to_remove:
-                if " " in remove_me.name and not remove_me.type and not remove_me.desc:
-                    # this is likely some extra text
-                    continue
-                print("    removing parameters", remove_me.name)
-                doc["Parameters"].remove(remove_me)
-        elif doc_missing or doc_extra:
-            print(f"{fname}:{func_name}")
-            if doc_missing:
-                print("  missing:", doc_missing)
-            if doc_extra:
-                print("  extra:", doc_extra)
+        params, jump_to_location = parameter_fixer(
+            params, meta_arg, meta, fname, func_name, config, doc
+        )
 
     fmt = ""
     start = True
@@ -708,7 +746,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
     assert fmt
     # we can't just do that as See Also and a few other would be sphinxified.
     # return indent(str(doc),'    ')+'\n    '
-    return fmt, doc, jtl
+    return fmt, doc, jump_to_location
 
 
 def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_p=None):
@@ -901,6 +939,7 @@ def main():
     parser.add_argument(
         "--space-in-notes-title", action="store_true", dest="space_in_notes_title"
     )
+    parser.add_argument("--no-fixers", action="store_false", dest="run_fixers")
     parser.add_argument(
         "--write",
         dest="write",
@@ -918,6 +957,7 @@ def main():
             "compact_param": args.compact,
             "space_in_see_also_title": args.space_in_see_also_title,
             "space_in_notes_title": args.space_in_notes_title,
+            "run_fixers": args.run_fixers,
         }
     )
     global BLACK_REFORMAT
