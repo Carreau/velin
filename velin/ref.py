@@ -11,11 +11,6 @@ from textwrap import indent
 import numpydoc.docscrape as nds
 from numpydoc.docscrape import Parameter
 
-try:
-    from there import print
-except ImportError:
-    pass
-
 from .examples_section_utils import reformat_example_lines
 
 
@@ -953,6 +948,11 @@ def main():
         action="store_true",
         help="Try to write the updated docstring to the files",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="increase the verbosity of the output",
+    )
 
     args = parser.parse_args()
 
@@ -972,6 +972,14 @@ def main():
         BLACK_REFORMAT = True
     else:
         BLACK_REFORMAT = False
+
+    global print
+    if args.verbose:
+        try:
+            from there import print
+        except ImportError:
+            pass
+
     to_format = []
 
     for f in args.paths:
