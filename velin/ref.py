@@ -535,6 +535,7 @@ def dedend_docstring(docstring):
 
 def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
     assert "Parameters" in doc
+    incorrect_number = False
     jump_to_location = False
     if not config.run_fixers:
         return params, jump_to_location
@@ -635,13 +636,14 @@ def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
             print("    removing parameters", remove_me.name)
             params.remove(remove_me)
     elif doc_missing or doc_extra:
+        incorrect_number = True
         print(f"{fname}:{func_name}")
         if doc_missing:
             print("  missing:", doc_missing)
         if doc_extra:
             print("  extra:", doc_extra)
 
-    return params, jump_to_location
+    return params, jump_to_location, incorrect_number
 
 
 def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
@@ -672,15 +674,18 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
         new docstring
     Numpydoc
         parsed numpydoc object
+    bool
+    bool
 
     """
     assert config is not None
 
+    fail_check = False
     INDENT = level * " "
     NINDENT = "\n" + INDENT
     original_docstr = docstr
     if len(docstr.splitlines()) <= 1:
-        return "", NumpyDocString(""), None
+        return "", NumpyDocString(""), None, fail_check
     shortdoc = bool(docstr.splitlines()[0].strip())
     short_with_space = False
     if not docstr.startswith(NINDENT):
@@ -706,9 +711,11 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
     jump_to_location = False
     if (params := doc["Parameters"]) and meta:
 
-        params, jump_to_location = parameter_fixer(
+        params, jump_to_location, incorrect_number = parameter_fixer(
             params, meta_arg, meta, fname, func_name, config, doc
         )
+        if incorrect_number:
+            fail_check = True
 
     fmt = ""
     start = True
@@ -743,8 +750,9 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
     assert fmt
     # we can't just do that as See Also and a few other would be sphinxified.
     # return indent(str(doc),'    ')+'\n    '
-    return fmt, doc, jump_to_location
-
+    if fmt != original_docstr:
+        fail_check = True
+    return fmt, doc, jump_to_location, fail_check
 
 def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_p=None):
     """
@@ -764,6 +772,34 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_
         <Multiline Description Here>
 
     """
+    return _reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_p=None)[0]
+
+def _reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_p=None):
+    """
+    Parameters
+    ----------
+    compact : bool
+        wether to use compact formatting
+    data : <Insert Type here>
+        <Multiline Description Here>
+    unsafe : bool
+        <Multiline Description Here>
+    fail : <Insert Type here>
+        <Multiline Description Here>
+    config : <Insert Type here>
+        <Multiline Description Here>
+    filename : <Insert Type here>
+        <Multiline Description Here>
+
+    Returns
+    -------
+    str
+        The new file
+    bool
+        Whether this file should fail under the --check flag
+
+    """
+    fail_check = False
     assert config is not None
 
     tree = ast.parse(data)
@@ -794,7 +830,7 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_
         # if not docstring in data:
         #    print(f"skip {file}: {func.name}, can't do replacement yet")
         try:
-            new_doc, d_, jump_to_loc = compute_new_doc(
+            new_doc, d_, jump_to_loc, _fail_check = compute_new_doc(
                 docstring,
                 filename,
                 level=nindent,
@@ -803,12 +839,14 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_
                 func_name=func_name,
                 config=config,
             )
+            if _fail_check:
+                fail_check = True
             if jump_to_loc:
                 print("mvim", f"+{start}", filename)
                 pass
                 # call editor with file and line number
             elif not unsafe:
-                _, d2, _ = compute_new_doc(
+                _, d2, _, _fail_check = compute_new_doc(
                     docstring,
                     filename,
                     level=nindent,
@@ -817,6 +855,8 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_
                     func_name=func_name,
                     config=config,
                 )
+                if _fail_check:
+                    fail_check = True
                 if not d2._parsed_data == d_._parsed_data:
                     secs1 = {
                         k: v
@@ -855,7 +895,8 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_
                 # if docstring not in new:
                 #    print("ESCAPE issue:", docstring)
                 new = new.replace(docstring, new_doc)
-    return new
+            fail_check = True
+    return new, fail_check
 
 
 class SkipPattern:
@@ -1014,7 +1055,7 @@ def main():
             raise RuntimeError(f"Fail reading {file}") from e
 
         obj_p = [p.obj_pattern for p in patterns if re.match(p.file, str(file))]
-        new = reformat_file(
+        new, _fail_check = _reformat_file(
             data,
             file,
             args.compact,
@@ -1049,6 +1090,9 @@ def main():
             if args.write:
                 with open(file, "w") as f:
                     f.write(new)
+        elif _fail_check:
+            need_changes.append(str(file))
+
     if args.check:
         if len(need_changes) != 0:
             sys.exit(
