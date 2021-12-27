@@ -14,9 +14,10 @@ You may need to get a modified version of numpydoc depending on the stage of dev
 ```
 $ git clone https://github.com/Carreau/velin
 $ cd velin
-$ pip install flit
-$ flit install --symlink
+$ pip install -e . 
 ```
+
+(You will need a quite recent pip and flit to do so)
 
 ## Autoreformat docstrings
 

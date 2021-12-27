@@ -398,6 +398,11 @@ class SectionFormatter:
         return self.format_See_Also_impl(sas, False, force_compact=compact)
 
     def format_See_Also_impl(self, sas, compact, force_compact, *varargs, **varkwargs):
+        """
+        Format a see also section.
+
+
+        """
         out = "See Also\n"
         out += "--------\n"
         if self.config.space_in_see_also_title:
@@ -429,7 +434,7 @@ class SectionFormatter:
                     out += f" :\n    {desc}"
                 else:
                     attempt = f" : {desc}"
-                    if len(out.splitlines()[-1] + attempt) > 75 and not force_compact:
+                    if len(out.splitlines()[-1] + attempt) > 80 and not force_compact:
                         return None
                     out += attempt
             for rd in rest_desc:
@@ -633,7 +638,9 @@ def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
             if " " in remove_me.name and not remove_me.type and not remove_me.desc:
                 # this is likely some extra text
                 continue
-            print("    removing parameters", remove_me.name)
+            print(
+                f"    removing parameters {remove_me!r}",
+            )
             params.remove(remove_me)
     elif doc_missing or doc_extra:
         incorrect_number = True
