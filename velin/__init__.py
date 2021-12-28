@@ -15,6 +15,7 @@ import textwrap
 from pathlib import Path
 
 from .ref import NumpyDocString, main
+from there import print
 
 __version__ = "0.0.11"
 

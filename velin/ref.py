@@ -13,7 +13,6 @@ from numpydoc.docscrape import Parameter
 
 from .examples_section_utils import reformat_example_lines
 
-
 def f(a, b, *args, **kwargs):
     """
     Parameters
@@ -73,7 +72,7 @@ class NodeVisitor(ast.NodeVisitor):
             # print(self.stack)
             oname = ".".join(self.stack)
             if oname in self.config["skip"]:
-                print("SKIPPPING", oname)
+                print("SKIPPING", oname)
                 self.stack.pop()
                 return
             super().visit(node)
@@ -706,7 +705,10 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
     if original_docstr.splitlines()[-2].strip():
         long_with_space = False
 
-    doc = NumpyDocString(dedend_docstring(docstr))
+    try:
+        doc = NumpyDocString(dedend_docstring(docstr))
+    except Exception as e:
+        raise type(e)(f"error in {fname}:{func_name}") from e
     if config.run_fixers:
         doc.normalize()
     meta_arg = [m.arg for m in meta["simple"]]
@@ -878,6 +880,8 @@ def _reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj
                     raise ValueError(
                         "Numpydoc parsing seem to differ after reformatting, this may be a reformatting bug. Rerun with `velin --unsafe "
                         + str(filename)
+                        + ":"
+                        + qname
                         + "`\n"
                         + str(secs1)
                         + "\n"
@@ -887,6 +891,8 @@ def _reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj
             print(f"something went wrong with {filename}:{qname} :\n\n{docstring}")
             if fail:
                 raise
+            else:
+                print(e)
             continue
         if not docstring.strip():
             print("DOCSTRING IS EMPTY !!!", func.name)
@@ -919,6 +925,9 @@ class SkipPattern:
             return self.file_pattern + ""
         else:
             return ".*" + self.file_pattern + ".*"
+
+    def __repr__(self):
+        return f"<SkipPattern {self.file}>"
 
 
 def main():
@@ -1044,7 +1053,7 @@ def main():
                 if p.obj_pattern is None:
                     return True
                 else:
-                    return False
+                    continue
         return False
 
     need_changes = []
