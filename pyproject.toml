@@ -10,7 +10,7 @@ readme = "Readme.md"
 license = {file = "LICENSE"}
 dynamic = ["version","description"]
 requires-python=">=3.8"
-requires=[
+dependencies=[
     "numpydoc",
     "pygments",
     "black",
