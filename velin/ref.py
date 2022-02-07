@@ -811,7 +811,7 @@ def _reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj
     fail_check = False
     assert config is not None
 
-    tree = ast.parse(data)
+    tree = ast.parse(data, filename)
     new = data
 
     # funcs = [t for t in tree.body if isinstance(t, ast.FunctionDef)]
