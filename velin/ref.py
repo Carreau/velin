@@ -542,7 +542,7 @@ def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
     incorrect_number = False
     jump_to_location = False
     if not config.run_fixers:
-        return params, jump_to_location
+        return params, jump_to_location, incorrect_number
     pnames = [o.strip() for p in params for o in p.name.split(",") if p.name]
     if meta_arg and meta_arg[0] in ["self", "cls"]:
         meta_arg = meta_arg[1:]
