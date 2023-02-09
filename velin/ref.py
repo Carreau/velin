@@ -941,7 +941,7 @@ def main():
             if x
         ]
 
-    parser = argparse.ArgumentParser(description="reformat the docstrigns of some file")
+    parser = argparse.ArgumentParser(description="reformat the docstrings of some file")
     parser.add_argument(
         "paths",
         metavar="path",
