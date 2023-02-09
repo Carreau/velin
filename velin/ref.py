@@ -964,7 +964,7 @@ def main():
     parser.add_argument(
         "--check",
         action="store_true",
-        help="Print the list of files/lines number and exit with a non-0 exit status/Use it for CI.",
+        help="Print the list of files/lines number and exit with a non-0 exit status. Specify this to use it for CI.",
     )
     parser.add_argument(
         "--no-diff",
