@@ -982,7 +982,7 @@ def main():
         "--with-placeholder",
         action="store_true",
         dest="with_placeholder",
-        help="insert missing sections/parameters placehoders",
+        help="insert missing sections/parameters placeholders",
     )
     parser.add_argument("--no-color", action="store_false", dest="do_highlight")
     parser.add_argument("--compact", action="store_true", help="Please ignore")
