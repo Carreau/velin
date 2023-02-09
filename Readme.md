@@ -51,7 +51,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --context context     Number of context lines in the diff
   --unsafe              Lift some safety feature (don't fail if updating the docstring is not indempotent)
-  --check               Print the list of files/lines number and exit with a non-0 exit status/Use it for CI.
+  --check               Print the list of files/lines number and exit with a non-0 exit status. Specify this to use it for CI.
   --no-diff             Do not print the diff
   --black               Do not run black on examples
   --with-placeholder    insert missing sections/parameters placeholders
