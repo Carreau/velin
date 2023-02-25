@@ -959,7 +959,7 @@ def main():
     parser.add_argument(
         "--unsafe",
         action="store_true",
-        help="Lift some safety feature (don't fail if updating the docstring is not indempotent)",
+        help="Lift some safety feature (don't fail if updating the docstring is not idempotent)",
     )
     parser.add_argument(
         "--check",
