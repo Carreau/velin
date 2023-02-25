@@ -941,7 +941,7 @@ def main():
             if x
         ]
 
-    parser = argparse.ArgumentParser(description="reformat the docstrigns of some file")
+    parser = argparse.ArgumentParser(description="reformat the docstrings of some file")
     parser.add_argument(
         "paths",
         metavar="path",
@@ -959,12 +959,12 @@ def main():
     parser.add_argument(
         "--unsafe",
         action="store_true",
-        help="Lift some safety feature (don't fail if updating the docstring is not indempotent",
+        help="Lift some safety feature (don't fail if updating the docstring is not idempotent)",
     )
     parser.add_argument(
         "--check",
         action="store_true",
-        help="Print the list of files/lines number and exit with a non-0 exit status, Use it for CI.",
+        help="Print the list of files/lines number and exit with a non-0 exit status. Specify this to use it for CI.",
     )
     parser.add_argument(
         "--no-diff",
@@ -982,7 +982,7 @@ def main():
         "--with-placeholder",
         action="store_true",
         dest="with_placeholder",
-        help="insert missing sections/parameters placehoders",
+        help="insert missing sections/parameters placeholders",
     )
     parser.add_argument("--no-color", action="store_false", dest="do_highlight")
     parser.add_argument("--compact", action="store_true", help="Please ignore")
