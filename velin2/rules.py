@@ -78,6 +78,17 @@ def check_section_adornment_position(tree):
     return violations
 
 
+def check_section_adornment_length(tree):
+    """section adornment must only have the same length as the title"""
+    query = lang_rst.query("(section) @section")
+    sections = [node for node, _ in query.captures(tree.root_node)]
+
+    violations = [
+        node for node in sections if len(node.child(1).text) != len(node.child(0).text)
+    ]
+    return violations
+
+
 def check_section_adornment_char(tree):
     """section adornment must consist only of '-'"""
     query = lang_rst.query("(section) @section")
@@ -91,17 +102,6 @@ def check_section_adornment_char(tree):
             for c in node.children
             if c.type == "adornment"
         )
-    ]
-    return violations
-
-
-def check_section_adornment_length(tree):
-    """section adornment must only have the same length as the title"""
-    query = lang_rst.query("(section) @section")
-    sections = [node for node, _ in query.captures(tree.root_node)]
-
-    violations = [
-        node for node in sections if len(node.child(1).text) != len(node.child(0).text)
     ]
     return violations
 
