@@ -1,6 +1,10 @@
 from .parser import get_language
 
 
+def extract_string(node):
+    return node.child(1)
+
+
 def extract_docstring_nodes(tree):
     query_statement = """
       [
@@ -12,4 +16,4 @@ def extract_docstring_nodes(tree):
     lang_py = get_language("python")
 
     query = lang_py.query(query_statement)
-    return [node for node, _ in query.captures(tree.root_node)]
+    return [extract_string(node) for node, _ in query.captures(tree.root_node)]
