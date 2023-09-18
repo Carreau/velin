@@ -97,8 +97,8 @@ def check_section_adornment_char(tree):
     violations = [
         node
         for node in sections
-        if all(
-            set(c.text.decode()) == {"-"}
+        if any(
+            set(c.text.decode()) != {"-"}
             for c in node.children
             if c.type == "adornment"
         )
