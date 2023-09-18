@@ -22,3 +22,10 @@ velin = "velin:main"
 
 [project.urls]
 Home = "https://github.com/Carreau/velin"
+
+[tool.isort]
+profile = "black"
+skip_gitignore = "true"
+force_to_top = "true"
+default_section = "THIRDPARTY"
+known_first_party = "velin2"
