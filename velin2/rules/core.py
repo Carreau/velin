@@ -1,3 +1,5 @@
+import itertools
+
 import attrs
 
 from velin2.context import Context
@@ -57,6 +59,10 @@ def check_docstring(path, node):
 
     tree = parser_rst.parse(cleaned_docstring.encode())
 
-    violations = {code: rule.check(tree, context) for code, rule in rules.items()}
+    violations = list(
+        itertools.chain.from_iterable(
+            rule.check(tree, context) for rule in rules.values()
+        )
+    )
 
     return violations
