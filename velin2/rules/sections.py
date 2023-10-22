@@ -57,10 +57,10 @@ def check_section_adornment_position(tree, context):
 
 @register_rule(
     "V003",
-    "Section title adornments (the underline) must solely consist of `-` characters.",
+    "Section title adornments (the underline) must have the same length as the title",
 )
 def check_section_adornment_length(tree, context):
-    """section adornment must only have the same length as the title"""
+    """section adornment must have the same length as the title"""
     query = lang_rst.query("(section) @section")
     sections = [node for node, _ in query.captures(tree.root_node)]
 
