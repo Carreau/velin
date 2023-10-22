@@ -1,4 +1,4 @@
-from .parser import get_language
+from velin2.parser import get_language
 
 
 def extract_string(node):
