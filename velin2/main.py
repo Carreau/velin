@@ -2,10 +2,10 @@ import argparse
 import pathlib
 import sys
 
-from .parser import get_parser
-from .python import extract_docstring_nodes
-from .report import format_report
-from .rules import check_docstring_rules
+from velin2.parser import get_parser
+from velin2.python import extract_docstring_nodes
+from velin2.report import format_report
+from velin2.rules import check_docstring
 
 
 def process_file(path):
@@ -13,15 +13,9 @@ def process_file(path):
 
     tree = parser.parse(path.read_bytes())
     docstring_nodes = extract_docstring_nodes(tree)
-    rule_violations = [(node, check_docstring_rules(node)) for node in docstring_nodes]
+    violations = [check_docstring(path, node) for node in docstring_nodes]
 
-    reports = [
-        format_report(path, node, violations)
-        for node, violations in rule_violations
-        if any(entry for entry in violations.values())
-    ]
-
-    return "\n".join(reports)
+    return format_report(violations)
 
 
 def main():
