@@ -3,7 +3,7 @@ import attrs
 from velin2.context import Context
 from velin2.docstring import cleandoc
 from velin2.parser import get_language, get_parser
-from velin2.rules.violations import Violation
+from velin2.rules.violation import Violation
 
 lang_rst = get_language("rst")
 parser_rst = get_parser("rst")
