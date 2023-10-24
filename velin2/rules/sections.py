@@ -105,7 +105,9 @@ def check_section_adornment_length(tree, context):
     sections = [node for node, _ in query.captures(tree.root_node)]
 
     violations = [
-        node for node in sections if len(node.child(1).text) != len(node.child(0).text)
+        node.child(1)
+        for node in sections
+        if len(node.child(1).text) != len(node.child(0).text)
     ]
     suggestions = [[] for node in violations]
     return zip(violations, suggestions)
