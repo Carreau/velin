@@ -1,5 +1,10 @@
+import itertools
+import re
+
 from velin2.rules.core import lang_rst, register_rule
 
+adornment_chars = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+adornment_re = re.compile(rf"[{re.escape(adornment_chars)}]{{3,}}")
 valid_section_names = [
     "Parameters",
     "Attributes",
@@ -19,6 +24,41 @@ valid_section_names = [
 
 @register_rule(
     "V001",
+    "Sections must be separated by blank lines",
+)
+def check_blank_line_before_section(tree, context):
+    def find_section_nodes(node):
+        lines = node.text.decode().splitlines()
+        # need at least two lines for sections
+        if len(lines) <= 2:
+            return []
+
+        matching_lines = [
+            lineno
+            for lineno, line in enumerate(lines)
+            if adornment_re.fullmatch(line.strip()) is not None
+        ]
+        matching_children = [
+            child
+            for child in node.children
+            if child.start_point[0] - node.start_point[0] + 1 in matching_lines
+        ]
+
+        return matching_children
+
+    query = lang_rst.query("[(paragraph) (term) (ERROR)] @node")
+    nodes = [node for node, _ in query.captures(tree.root_node)]
+
+    violations = list(
+        itertools.chain.from_iterable(find_section_nodes(node) for node in nodes)
+    )
+    suggestions = [[] for node in violations]
+
+    return zip(violations, suggestions)
+
+
+@register_rule(
+    "V003",
     "\n".join(
         [
             "Section titles must be exactly one of:",
@@ -38,7 +78,7 @@ def check_section_name(tree, context):
 
 
 @register_rule(
-    "V002",
+    "V004",
     "Section titles can only have a single adornment (an underline).",
 )
 def check_section_adornment_position(tree, context):
@@ -56,7 +96,7 @@ def check_section_adornment_position(tree, context):
 
 
 @register_rule(
-    "V003",
+    "V005",
     "Section title adornments (the underline) must have the same length as the title",
 )
 def check_section_adornment_length(tree, context):
@@ -72,7 +112,7 @@ def check_section_adornment_length(tree, context):
 
 
 @register_rule(
-    "V004",
+    "V006",
     "Section title adornments (the underline) must solely consist of `-` characters.",
 )
 def check_section_adornment(tree, context):
