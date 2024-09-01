@@ -13,8 +13,6 @@ requires-python=">=3.10"
 dependencies=[
     "numpydoc",
     "pygments",
-    "black",
-    "there"
 ]
 
 [project.scripts]
