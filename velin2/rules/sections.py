@@ -1,5 +1,6 @@
 import itertools
 import re
+from difflib import get_close_matches
 
 from velin2.rules.core import lang_rst, register_rule
 
@@ -73,13 +74,17 @@ def check_blank_line_before_section(tree, context):
     ),
 )
 def check_section_name(tree, context):
+    def suggest_valid_name(detected):
+        return get_close_matches(detected, valid_section_names)
+
     query = lang_rst.query("(section (title) @title)")
     titles = [node for node, _ in query.captures(tree.root_node)]
 
     violations = [
         title for title in titles if title.text.decode() not in valid_section_names
     ]
-    suggestions = [[] for node in violations]
+
+    suggestions = [suggest_valid_name(node.text.decode()) for node in violations]
     return zip(violations, suggestions)
 
 
