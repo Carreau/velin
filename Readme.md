@@ -6,7 +6,6 @@ French for Vellum
 > for this material, and if vellum is distinguished from this, it is by vellum being made from calfskin, as opposed to
 > that from other animals,[1] or otherwise being of higher quality
 
-
 ## install
 
 You may need to get a modified version of numpydoc depending on the stage of development.
@@ -14,7 +13,7 @@ You may need to get a modified version of numpydoc depending on the stage of dev
 ```
 $ git clone https://github.com/Carreau/velin
 $ cd velin
-$ pip install -e . 
+$ pip install -e .
 ```
 
 (You will need a quite recent pip and flit to do so)
@@ -24,12 +23,11 @@ $ pip install -e .
 This assume your docstrings are in RST/Numpydoc format, and will try to fix
 common formatting mistakes and typo.
 
-
 ```
 velin [--write] <path-to-file.py> or <path-to-dir>
 ```
 
-Without `--write` vélin will print the suggested diff, with `--write` it will _attempt_  to update the files.
+Without `--write` vélin will print the suggested diff, with `--write` it will _attempt_ to update the files.
 
 ## options
 
@@ -68,13 +66,12 @@ optional arguments:
 
 Beyond reformatting, vélin will by default try to run a number of heuristics to update your docstrings:
 
-  - Remove non existing but documented parameters,
-  - Rename parameter with typos,
-  - insert space before colon when necessary.
+- Remove non existing but documented parameters,
+- Rename parameter with typos,
+- insert space before colon when necessary.
 
 Unfortunately sometime those heuristics can remove actual content, for example in the malformed DocString below, the
 Return section would be removed
-
 
 ```
 def sum(a, b):
@@ -107,11 +104,7 @@ likely an underline, there are other case where it's unclear what to do.
 
 You can thus disable those fixers by passing the option `--no-fixers`
 
-
-
-
 ## setup.cfg
-
 
 Ignore files with ignore_patterns, `filename` or `filename:qualified_name`.
 You can (try to), put patterns in there, but it's not guarantied to work yet.
@@ -125,6 +118,6 @@ ignore_patterns =
 
 ## kind of things it fixes
 
- - Spacing around colon,
- - If one parameter has typo wrt function signature: fix it.
- - Insert all missing parameters with placeholders.
+- Spacing around colon,
+- If one parameter has typo wrt function signature: fix it.
+- Insert all missing parameters with placeholders.

@@ -1,7 +1,6 @@
 import argparse
 import ast
 import difflib
-import json
 import re
 import sys
 from configparser import ConfigParser
@@ -11,7 +10,8 @@ from textwrap import indent
 import numpydoc.docscrape as nds
 from numpydoc.docscrape import Parameter
 
-from .examples_section_utils import reformat_example_lines
+from velin.examples_section_utils import reformat_example_lines
+
 
 def f(a, b, *args, **kwargs):
     """
@@ -171,7 +171,7 @@ class NumpyDocString(nds.NumpyDocString):
         """
         Apply a bunch of heuristic that try to normalise the data.
         """
-        if (params := self["Parameters"]) :
+        if params := self["Parameters"]:
             for i, p in enumerate(params):
                 if not p.type and (":" in p.name) and not p.name.endswith(":"):
                     if p.name.startswith(".."):
@@ -179,9 +179,9 @@ class NumpyDocString(nds.NumpyDocString):
                     if re.match(":\w+:`", p.name):
                         print("may have a directive", p.name)
                     try:
-                        name, type_ = [
+                        name, type_ = (
                             _.strip() for _ in p.name.split(": ", maxsplit=1)
-                        ]
+                        )
                     except Exception as e:
                         raise type(e)(p.name)
                     params[i] = nds.Parameter(name, type_, p[2])
@@ -286,21 +286,21 @@ class NumpyDocString(nds.NumpyDocString):
 
 def w(orig):
     """Util function that shows whitespace as `·`."""
-    ll = []
-    for l in orig:
-        if l[0] in "+-":
+    lines = []
+    for line in orig:
+        if line[0] in "+-":
             # ll.append(l.replace(' ', '⎵'))
-            ll.append(l.replace(" ", "·"))
+            lines.append(line.replace(" ", "·"))
 
         else:
-            ll.append(l)
-    lll = []
-    for l in ll:
-        if l.endswith("\n"):
-            lll.append(l[:-1])
+            lines.append(line)
+    processed_lines = []
+    for line in lines:
+        if line.endswith("\n"):
+            processed_lines.append(line[:-1])
         else:
-            lll.append(l[:])
-    return lll
+            processed_lines.append(line[:])
+    return processed_lines
 
 
 class Config:
@@ -373,7 +373,7 @@ class SectionFormatter:
             else:
                 out += f"""{p.name.strip()}\n"""
             if p.desc:
-                if any([l.strip() == "" for l in p.desc]):
+                if any([line.strip() == "" for line in p.desc]):
                     try_other = True
 
                 out += indent("\n".join(p.desc), "    ")
@@ -553,7 +553,7 @@ def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
     for p in params:
         if p[1].startswith("<"):
             jump_to_location = True
-    assert doc_extra != {""}, (set(a), set(meta_arg), params)
+    assert doc_extra != {""}, (set(meta), set(meta_arg), params)
     # don't considert template parameter from numpy/scipy
     doc_extra = {x for x in doc_extra if not (("$" in x) or ("%" in x))}
 
@@ -561,7 +561,6 @@ def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
         renamed = False
         for i, p in enumerate(params):
             if p.name == source:
-                name = p.name
                 params[i] = nds.Parameter(target, *p[1:])
                 renamed = True
                 break
@@ -622,7 +621,7 @@ def parameter_fixer(params, meta_arg, meta, fname, func_name, config, doc):
                 nds.Parameter(
                     param,
                     f"{annotation_str}",
-                    [f"<Multiline Description Here>"],
+                    ["<Multiline Description Here>"],
                 )
             )
     elif (
@@ -763,6 +762,7 @@ def compute_new_doc(docstr, fname, *, level, compact, meta, func_name, config):
         fail_check = True
     return fmt, doc, jump_to_location, fail_check
 
+
 def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_p=None):
     """
     Parameters
@@ -781,9 +781,14 @@ def reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_
         <Multiline Description Here>
 
     """
-    return _reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_p=None)[0]
+    return _reformat_file(
+        data, filename, compact, unsafe, fail=False, config=None, obj_p=None
+    )[0]
 
-def _reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj_p=None):
+
+def _reformat_file(
+    data, filename, compact, unsafe, fail=False, config=None, obj_p=None
+):
     """
     Parameters
     ----------
@@ -831,7 +836,7 @@ def _reformat_file(data, filename, compact, unsafe, fail=False, config=None, obj
             continue
         if not isinstance(docstring, str):
             continue
-        start, nindent, stop = (
+        start, nindent, _ = (
             func.body[0].lineno,
             func.body[0].col_offset,
             func.body[0].end_lineno,
@@ -1012,8 +1017,6 @@ def main():
     )
 
     args = parser.parse_args()
-
-    from types import SimpleNamespace
 
     config = Config(
         {

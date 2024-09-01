@@ -18,21 +18,21 @@ def reformat(lines, indent=4):
 
 def insert_promt(lines):
     new = []
-    for p, l in zip(chain([">>> "], cycle(["... "])), lines):
-        new.append(p + l)
+    for p, line in zip(chain([">>> "], cycle(["... "])), lines):
+        new.append(p + line)
     return new
 
 
 def splitblank(list):
     items = []
     current = []
-    for l in list:
-        if not l.strip():
+    for line in list:
+        if not line.strip():
             if current:
                 items.append(current)
             current = []
         else:
-            current.append(l)
+            current.append(line)
     if current:
         items.append(current)
     return items
@@ -64,20 +64,20 @@ def splitcode(lines):
         return [InOutText([], lines)]
 
     state = "notcode"
-    for i, l in enumerate(lines):
-        if l.startswith(">>> ") and state == "notcode":
+    for i, line in enumerate(lines):
+        if line.startswith(">>> ") and state == "notcode":
             state = "code"
             if in_ or out:
                 items.append(InOutText(in_, out))
             in_, out = [], []
 
-            in_.append(l[4:])
+            in_.append(line[4:])
         # ... can appear in pandas output.
-        elif (l.startswith("... ") or l.startswith(">>> ")) and state == "code":
-            in_.append(l[4:])
+        elif (line.startswith("... ") or line.startswith(">>> ")) and state == "code":
+            in_.append(line[4:])
         else:
             state = "notcode"
-            out.append(l)
+            out.append(line)
     if in_ or out:
         items.append(InOutText(in_, out))
     return items
@@ -93,7 +93,7 @@ def reformat_example_lines(ex, indent=4):
         for block in blocks:
             # print(block)
             codes = splitcode(block)
-            for (in_, out) in codes:
+            for in_, out in codes:
                 oo.extend(insert_promt(reformat(in_, indent=4)))
                 if out:
                     oo.extend(out)
@@ -101,6 +101,5 @@ def reformat_example_lines(ex, indent=4):
         return oo[:-1]
     except Exception:
         print(block)
-        import sys
 
         raise
