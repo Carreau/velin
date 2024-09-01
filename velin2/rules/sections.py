@@ -5,6 +5,12 @@ from velin2.rules.core import lang_rst, register_rule
 
 adornment_chars = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
 adornment_re = re.compile(rf"[{re.escape(adornment_chars)}]{{3,}}")
+sections_without_title = [
+    "signature",
+    "short summary",
+    "deprecated",
+    "extended summary",
+]
 valid_section_names = [
     "Parameters",
     "Attributes",
