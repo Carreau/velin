@@ -53,12 +53,7 @@ def register_rule(code, description):
     return outer
 
 
-def check_docstring(path, node):
-    cleaned_docstring, column_offsets = cleandoc(node.text.decode())
-    context = Context(path, node, column_offsets)
-
-    tree = parser_rst.parse(cleaned_docstring.encode())
-
+def _check_docstring(tree, context):
     violations = list(
         itertools.chain.from_iterable(
             rule.check(tree, context) for rule in rules.values()
@@ -66,3 +61,11 @@ def check_docstring(path, node):
     )
 
     return violations
+
+
+def check_docstring(path, node):
+    cleaned_docstring, column_offsets = cleandoc(node.text.decode())
+    context = Context(path, node, column_offsets)
+    tree = parser_rst.parse(cleaned_docstring.encode())
+
+    return _check_docstring(tree, context)
