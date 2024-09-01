@@ -27,3 +27,8 @@ repos:
       - id: blackdoc
         additional_dependencies: ["black==22.1.0"]
       - id: blackdoc-autoupdate-black
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: 0.0.0
+    hooks:
+      - id: prettier
+        args: [--cache-location=.prettier_cache/cache]
