@@ -64,7 +64,7 @@ def check_blank_line_before_section(tree, context):
 
 
 @register_rule(
-    "V003",
+    "V002",
     "\n".join(
         [
             "Section titles must be exactly one of:",
