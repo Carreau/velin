@@ -10,6 +10,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-docstring-first
       - id: check-yaml
+      - id: check-toml
       - id: mixed-line-ending
   # isort should run before black as black sometimes tweaks the isort output
   - repo: https://github.com/pycqa/isort
