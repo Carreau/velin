@@ -69,7 +69,7 @@ def check_blank_line_before_section(tree, context):
     "\n".join(
         [
             "Section titles must be exactly one of:",
-            ", ".join(repr(n) for n in valid_section_names),
+            f"[{', '.join(repr(n) for n in valid_section_names)}]",
         ]
     ),
 )
