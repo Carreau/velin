@@ -134,3 +134,87 @@ def test_blank_line_before_section(docstring, n_violations, rules):
     violations = _check_docstring(tree, context)
 
     assert len(violations) == n_violations, format_violations(violations)
+
+
+@pytest.mark.parametrize(
+    ["docstring", "n_violations"],
+    (
+        pytest.param(
+            """short summary
+
+            Parameters
+            ----------
+            a : int
+                description
+
+            Returns
+            -------
+            a : int
+                description
+            """,
+            0,
+            id="passing",
+        ),
+        pytest.param(
+            """short summary
+
+            Paramters
+            ----------
+            a : int
+                description
+
+            Returns
+            -------
+            a : int
+                description
+            """,
+            1,
+            id="misspelled parameters",
+        ),
+        pytest.param(
+            """short summary
+
+            Args
+            ----
+            a : int
+                description
+
+            Returns
+            -------
+            a : int
+                description
+            """,
+            1,
+            id="invalid section",
+        ),
+        pytest.param(
+            """short summary
+
+            Parameters
+            ----------
+            a : int
+                description
+
+            results
+            -------
+            a : int
+                description
+            """,
+            1,
+            id="misspelled results",
+        ),
+    ),
+)
+def test_section_name(docstring, n_violations, rules):
+    rules.isolate("V002")
+
+    dummy_node = DummyNode()
+
+    cleaned_docstring, column_offsets = cleandoc(docstring)
+
+    tree = parser_rst.parse(cleaned_docstring.encode())
+    context = Context("<test example>", dummy_node, column_offsets)
+
+    violations = _check_docstring(tree, context)
+
+    assert len(violations) == n_violations, format_violations(violations)
