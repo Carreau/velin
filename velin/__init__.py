@@ -10,12 +10,11 @@ Tools to automatically reformat docstrings based using numpydoc format.
 
 """
 
-import sys
 import textwrap
-from pathlib import Path
 
-from .ref import NumpyDocString, main
 from there import print
+
+from velin.ref import NumpyDocString, main
 
 __version__ = "0.0.12"
 
@@ -28,8 +27,8 @@ def parse(input):
 
     """
     tokens = []
-    for l in input.splitlines():
-        tokens.extend(l.split(" "))
+    for line in input.splitlines():
+        tokens.extend(line.split(" "))
     return tokens
 
 
@@ -53,8 +52,8 @@ def transform(tokens):
 
 def format(lines):
     s = ""
-    for l in lines:
-        s = s + " ".join(l)
+    for line in lines:
+        s = s + " ".join(line)
         s = s + "\n"
     return s[:-1]
 
@@ -69,13 +68,13 @@ def compute_indents(lines):
     """
     assert isinstance(lines, list)
     results = []
-    for l in lines:
-        s = l.lstrip()
+    for line in lines:
+        s = line.lstrip()
         if not s:
             results.append(None)
             continue
-        indent = len(l) - len(s)
-        if "\t" in l[:indent]:
+        indent = len(line) - len(s)
+        if "\t" in line[:indent]:
             raise NotImplementedError
 
         results.append(indent)
@@ -160,14 +159,14 @@ class RawTilNextHeader:
     @classmethod
     def parse(cls, lines):
         ll = []
-        for i, l in enumerate(lines):
+        for i, line in enumerate(lines):
             try:
                 Header.parse(lines[i:])
                 break
             except TryNext:
                 pass
 
-            ll.append(l)
+            ll.append(line)
         else:
             return cls(ll), [], []
 
@@ -192,7 +191,7 @@ class DescriptionList:
     def parse(cls, lines):
         dct = {}
         key, values = None, []
-        for i, l in enumerate(lines):
+        for i, line in enumerate(lines):
             try:
                 Header.parse(lines[i:])
                 dct[key] = values
@@ -200,13 +199,13 @@ class DescriptionList:
             except TryNext:
                 pass
 
-            if not l.startswith(" "):
+            if not line.startswith(" "):
                 dct[key] = values
-                key, values = l.strip(), []
+                key, values = line.strip(), []
                 if "," in key:
                     raise TryNext
             else:
-                values.append(l)
+                values.append(line)
         if None in dct:
             del dct[None]
         return cls(dct), lines[i:], []
@@ -241,7 +240,7 @@ class Listing:
     @classmethod
     def parse(cls, lines):
         assert "," in lines[0], lines[0]
-        listing = [l.strip() for l in lines[0].split(",")]
+        listing = [line.strip() for line in lines[0].split(",")]
         return cls(listing), lines[1:], []
 
     def __init__(self, listing):
@@ -294,9 +293,9 @@ class EntryParser(Base):
         i = 0
         if indent:
             cont = [l1]
-            for i, l in enumerate(rest):
-                if l.startswith(" " * indent) or not l.strip():
-                    cont.append(l)
+            for i, line in enumerate(rest):
+                if line.startswith(" " * indent) or not line.strip():
+                    cont.append(line)
                 else:
                     break
             else:
@@ -307,7 +306,7 @@ class EntryParser(Base):
             rest = lines[1:]
         if ":" in l0:
             try:
-                head, t = [x.strip() for x in l0.split(":", maxsplit=1)]
+                head, t = (x.strip() for x in l0.split(":", maxsplit=1))
             except ValueError:
                 print("... Entry TryNext", lines[:5])
                 raise TryNext
@@ -396,28 +395,28 @@ class Mapping:
     def parse(cls, lines):
         mapping = {}
         k = None
-        for i, l in enumerate(lines):
-            if not l.strip():
+        for i, line in enumerate(lines):
+            if not line.strip():
                 continue
             try:
                 Header.parse(lines[i:])
                 break
             except TryNext:
                 pass
-            if l.startswith(" ") and k:
+            if line.startswith(" ") and k:
                 try:
-                    mapping[k.strip()] += l.strip()
+                    mapping[k.strip()] += line.strip()
                 except TypeError:
                     raise TryNext
 
-            if ":" in l:
-                k, v = l.split(":", maxsplit=1)
+            if ":" in line:
+                k, v = line.split(":", maxsplit=1)
                 mapping[k.strip()] = v
-            elif "," not in l:
-                k, v = l.strip(), None
+            elif "," not in line:
+                k, v = line.strip(), None
                 mapping[k] = v
             else:
-                for k in l.split(","):
+                for k in line.split(","):
                     mapping[k.strip()] = None
 
         return cls(mapping), lines[i:], []
@@ -457,10 +456,10 @@ class CodeBlock:
             raise TryNext
 
         _lines = []
-        for i, l in enumerate(lines):
-            if not l.strip():
+        for i, line in enumerate(lines):
+            if not line.strip():
                 break
-            _lines.append(l)
+            _lines.append(line)
         else:
             return cls(_lines), [], []
         return cls(_lines), lines[i:], []
@@ -482,7 +481,6 @@ class Doc:
     @classmethod
     def parse(cls, lines, *, name=None, sig=None):
         parsed = []
-        cl = len(lines)
         warnings = []
         while lines:
             for t in (
@@ -568,7 +566,6 @@ class Doc:
             return f"<a href=./{it}.html>{it}</a>"
 
         if self.backrefs:
-            backref_repr = ",".join(self.backrefs)
             br_html = "<h1>Back references</h1>" + ", ".join(
                 f_(b) for b in self.backrefs
             )
@@ -586,7 +583,7 @@ class Doc:
 
         hrepr = []
         for n in self.nodes:
-            if isinstance(n, (Mapping, DeflistParser)):
+            if isinstance(n, Mapping | DeflistParser):
                 hrepr.append(n._repr_html_(_resolver))
             else:
                 hrepr.append(n._repr_html_())
@@ -686,9 +683,9 @@ class Paragraph:
             if lines[1].startswith(" ") and lines[1].strip():
                 # second line indented this _is_ a deflist
                 raise TryNext
-        for i, l in enumerate(lines):
-            if l and not l.startswith(" "):
-                _lines.append(l)
+        for i, line in enumerate(lines):
+            if line and not line.startswith(" "):
+                _lines.append(line)
             else:
                 break
         if not _lines:
@@ -764,7 +761,7 @@ def find_indent_blocks(lines):
     n_empty_lines = 0
 
     blocks = []
-    for new_level, l in zip(indents[1:], lines[1:]):
+    for new_level, line in zip(indents[1:], lines[1:]):
         if new_level is None:
             n_empty_lines += 1
             continue
@@ -773,7 +770,7 @@ def find_indent_blocks(lines):
             current_block.extend([""] * n_empty_lines)
             n_empty_lines = 0
             blocks.append((indent_level, current_block))
-            current_block = [l]
+            current_block = [line]
             indent_level = new_level
             continue
         if n_empty_lines:
@@ -783,16 +780,16 @@ def find_indent_blocks(lines):
         if indent_level == 0 and new_level:
             # start a new block
             blocks.append((0, current_block))
-            current_block = [l[new_level:]]
+            current_block = [line[new_level:]]
             indent_level = new_level
             continue
 
         # we are already in indented blocks.
         if new_level >= indent_level:
-            current_block.append(l[indent_level:])
+            current_block.append(line[indent_level:])
         elif new_level < indent_level:
             blocks.append((indent_level, current_block))
-            current_block = [l]
+            current_block = [line]
             indent_level = new_level
             continue
     if current_block:

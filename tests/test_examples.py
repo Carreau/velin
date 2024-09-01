@@ -1,7 +1,8 @@
 import glob
 
 import pytest
-from velin import compute_indents, find_indent_blocks, reformat
+
+from velin import compute_indents, reformat
 
 test_files = glob.glob("examples/*.rst")
 
@@ -29,21 +30,21 @@ example
         ),
         (
             """this
-  
+
 example
 """,
             [0, None, 0],
         ),
         (
             """ this
-  
+
 example
 """,
             [1, None, 0],
         ),
         (
             """ this
-  
+
   example
 """,
             [1, None, 2],
