@@ -15,7 +15,7 @@ def process_file(path):
     docstring_nodes = extract_docstring_nodes(tree)
     violations = [check_docstring(path, node) for node in docstring_nodes]
 
-    return format_report(violations)
+    return len(violations), format_report(violations)
 
 
 def main():
@@ -25,12 +25,15 @@ def main():
     args = parser.parse_args()
 
     violations_found = False
+    n_violations = 0
     for path in args.paths:
-        report = process_file(path)
+        n, report = process_file(path)
         if not report:
             continue
 
+        n_violations += n
         violations_found = True
         print(report)
 
+    print("total violations:", n_violations)
     sys.exit(0 if not violations_found else 1)
