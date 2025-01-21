@@ -60,7 +60,7 @@ def check_blank_line_before_section(tree, context):
         return matching_children
 
     query = lang_rst.query("[(paragraph) (term) (ERROR)] @node")
-    nodes = [node for node, _ in query.captures(tree.root_node)]
+    nodes = [node for node in query.captures(tree.root_node)["node"]]
 
     violations = list(
         itertools.chain.from_iterable(find_section_nodes(node) for node in nodes)
@@ -81,7 +81,7 @@ def check_blank_line_before_section(tree, context):
 )
 def check_section_name(tree, context):
     query = lang_rst.query("(section (title) @title)")
-    titles = [node for node, _ in query.captures(tree.root_node)]
+    titles = [node for node in query.captures(tree.root_node)["title"]]
 
     violations = [
         title for title in titles if title.text.decode() not in valid_section_names
@@ -106,9 +106,9 @@ def check_section_name(tree, context):
 def check_section_order(tree, context):
     def extract_sections(tree):
         query = lang_rst.query("(document [(paragraph) (directive)] @section)")
-        unnamed_sections = [node for node, _ in query.captures(tree.root_node)]
+        unnamed_sections = [node for node in query.captures(tree.root_node)["section"]]
         query = lang_rst.query("(section) @section")
-        named_sections = [node for node, _ in query.captures(tree.root_node)]
+        named_sections = [node for node in query.captures(tree.root_node)["section"]]
 
         return unnamed_sections, named_sections
 
@@ -144,7 +144,7 @@ def check_section_order(tree, context):
                     unnamed_names["extended_summary"] = extended + [node]
             elif node.type == "directive":
                 query = lang_rst.query("(type) @type")
-                type_node, _ = query.captures(node)[0]
+                [type_node] = query.captures(node)["type"]
                 type_ = type_node.text.decode()
                 if type_ != "deprecated":
                     pass
@@ -197,7 +197,7 @@ def check_section_order(tree, context):
 def check_section_adornment_position(tree, context):
     """section titles must have only an underline"""
     query = lang_rst.query("(section) @section")
-    sections = [node for node, _ in query.captures(tree.root_node)]
+    sections = [node for node in query.captures(tree.root_node)["section"]]
 
     violations = [
         node
@@ -215,7 +215,7 @@ def check_section_adornment_position(tree, context):
 def check_section_adornment_length(tree, context):
     """section adornment must have the same length as the title"""
     query = lang_rst.query("(section) @section")
-    sections = [node for node, _ in query.captures(tree.root_node)]
+    sections = [node for node in query.captures(tree.root_node)["section"]]
 
     violations = [
         node.child(1)
@@ -233,7 +233,7 @@ def check_section_adornment_length(tree, context):
 def check_section_adornment(tree, context):
     """section adornment must consist only of '-'"""
     query = lang_rst.query("(section) @section")
-    sections = [node for node, _ in query.captures(tree.root_node)]
+    sections = [node for node in query.captures(tree.root_node)["section"]]
 
     violations = [
         node

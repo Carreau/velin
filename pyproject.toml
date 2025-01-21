@@ -11,7 +11,7 @@ license = {file = "LICENSE"}
 dynamic = ["version","description"]
 requires-python=">=3.10"
 dependencies=[
-    "tree-sitter",
+    "tree-sitter>=0.24",
     "tree-sitter-python",
     "tree-sitter-rst",
     "rich",

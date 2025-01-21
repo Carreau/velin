@@ -16,4 +16,6 @@ def extract_docstring_nodes(tree):
     lang_py = get_language("python")
 
     query = lang_py.query(query_statement)
-    return [extract_string(node) for node, _ in query.captures(tree.root_node)]
+    return [
+        extract_string(node) for node in query.captures(tree.root_node)["docstring"]
+    ]
