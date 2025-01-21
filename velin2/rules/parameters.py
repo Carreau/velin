@@ -53,7 +53,15 @@ def custom_predicates(predicate, args, pattern_index, captures):
 
             nodes = captures[values[0]]
 
-            return any(not node.text.decode().isidentifier() for node in nodes)
+            return any(
+                not (
+                    node.text.decode()
+                    .removeprefix("**")
+                    .removeprefix("*")
+                    .isidentifier()
+                )
+                for node in nodes
+            )
 
     raise TypeError(f"unknown predicate: {predicate}")
 

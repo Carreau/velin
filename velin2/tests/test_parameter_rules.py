@@ -97,6 +97,10 @@ def test_format_as_definition_list(docstring, n_violations, rules):
             ----------
             a : int
                 description
+            *args
+                description
+            **kwargs
+                description
             """,
             0,
             id="parameters-passing",
@@ -116,6 +120,10 @@ def test_format_as_definition_list(docstring, n_violations, rules):
             Other Parameters
             ----------------
             a : int
+                description
+            *args
+                description
+            **kwargs
                 description
             """,
             0,
