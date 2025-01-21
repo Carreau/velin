@@ -2,36 +2,8 @@ import pytest
 
 from velin2.context import Context
 from velin2.docstring import cleandoc
-from velin2.rules import core
 from velin2.rules.core import _check_docstring, parser_rst
-
-
-class DummyNode:
-    def __init__(self):
-        self.start_point = (0, 0)
-
-
-@pytest.fixture
-def rules(monkeypatch):
-    class IsolatedRules:
-        def isolate(self, rules: str | list[str]):
-            if isinstance(rules, str):
-                rules = [rules]
-            isolated_rules = {
-                name: rule for name, rule in core.rules.items() if name in rules
-            }
-            monkeypatch.setattr(core, "rules", isolated_rules)
-
-    yield IsolatedRules()
-
-
-def format_violations(violations):
-    return "\n".join(
-        [
-            "Found the following violations:",
-            *(str(violation) for violation in violations),
-        ]
-    )
+from velin2.tests import DummyNode, format_violations
 
 
 @pytest.mark.parametrize(
