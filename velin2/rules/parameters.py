@@ -14,7 +14,7 @@ def custom_predicates(predicate, args, pattern_index, captures):
             # query guarantees that the capture name exists
             nodes = captures[args[0][0]]
 
-            return all(node.type == "definition_list" for node in nodes)
+            return all(node.type != "definition_list" for node in nodes)
 
     raise TypeError(f"unknown predicate: {predicate}")
 
@@ -30,8 +30,8 @@ def check_format_as_definition_list(tree, context):
         (
           (section (title) @title (#eq? @title "Parameters"))
           .
-          (_) @node (#not-definition-list? @node)
-        ) @content
+          ((_) @node (#not-definition-list? @node)) @content
+        )
         """
     )
 

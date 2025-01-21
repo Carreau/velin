@@ -1,0 +1,57 @@
+import pytest
+
+from velin2.context import Context
+from velin2.docstring import cleandoc
+from velin2.rules.core import _check_docstring, parser_rst
+from velin2.tests import DummyNode, format_violations
+
+
+@pytest.mark.parametrize(
+    ["docstring", "n_violations"],
+    (
+        pytest.param(
+            """short summary
+
+            Parameters
+            ----------
+            a : int
+                description
+            """,
+            0,
+            id="passing",
+        ),
+        pytest.param(
+            """
+            Parameters
+            ----------
+            a: text
+            b: text
+            """,
+            1,
+            id="failing-paragraph",
+        ),
+        pytest.param(
+            """
+            Parameters
+            ----------
+            - a
+            - b
+            """,
+            1,
+            id="failing-bullet_list",
+        ),
+    ),
+)
+def test_format_as_definition_list(docstring, n_violations, rules):
+    rules.isolate("V100")
+
+    dummy_node = DummyNode()
+
+    cleaned_docstring, column_offsets = cleandoc(docstring)
+
+    tree = parser_rst.parse(cleaned_docstring.encode())
+    context = Context("<test example>", dummy_node, column_offsets)
+
+    violations = _check_docstring(tree, context)
+
+    assert len(violations) == n_violations, format_violations(violations)
