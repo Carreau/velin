@@ -18,7 +18,7 @@ from velin2.tests import DummyNode, format_violations
                 description
             """,
             0,
-            id="passing",
+            id="parameters-passing",
         ),
         pytest.param(
             """
@@ -28,7 +28,7 @@ from velin2.tests import DummyNode, format_violations
             b: text
             """,
             1,
-            id="failing-paragraph",
+            id="parameters-failing-paragraph",
         ),
         pytest.param(
             """
@@ -38,7 +38,38 @@ from velin2.tests import DummyNode, format_violations
             - b
             """,
             1,
-            id="failing-bullet_list",
+            id="parameters-failing-bullet_list",
+        ),
+        pytest.param(
+            """short summary
+
+            Other Parameters
+            ----------
+            a : int
+                description
+            """,
+            0,
+            id="other parameters-passing",
+        ),
+        pytest.param(
+            """
+            Other Parameters
+            ----------
+            a: text
+            b: text
+            """,
+            1,
+            id="other parameters-failing-paragraph",
+        ),
+        pytest.param(
+            """
+            Other Parameters
+            ----------
+            - a
+            - b
+            """,
+            1,
+            id="other parameters-failing-bullet_list",
         ),
     ),
 )

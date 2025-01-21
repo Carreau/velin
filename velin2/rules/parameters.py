@@ -28,7 +28,10 @@ def check_format_as_definition_list(tree, context):
     query = lang_rst.query(
         """
         (
-          (section (title) @title (#eq? @title "Parameters"))
+          (
+            section (title) @title
+            (#any-of? @title "Parameters" "Other Parameters")
+          )
           .
           ((_) @node (#not-definition-list? @node)) @content
         )
