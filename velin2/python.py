@@ -22,3 +22,30 @@ def extract_docstring_nodes(tree):
     docstrings = [extract_string(node) for node in captures.get("docstring", [])]
 
     return zip(docstrings, parents)
+
+
+def extract_identifier(node):
+    if node.type in {"identifier", "list_splat_pattern", "dictionary_splat_pattern"}:
+        return node
+
+    return node.child_by_field_name("name")
+
+
+def extract_parameter_names(node):
+    parameter_field = node.child_by_field_name("parameters")
+
+    identifier_types = {
+        "identifier",
+        "list_splat_pattern",
+        "dictionary_splat_pattern",
+        "default_parameter",
+        "typed_default_parameter",
+    }
+
+    identifiers = [
+        extract_identifier(node)
+        for node in parameter_field.children
+        if node.type in identifier_types
+    ]
+
+    return identifiers
