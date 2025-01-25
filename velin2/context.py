@@ -6,4 +6,5 @@ class Context:
     path = attrs.field()
 
     docstring_node = attrs.field()
+    parent_node = attrs.field()
     column_offsets = attrs.field()

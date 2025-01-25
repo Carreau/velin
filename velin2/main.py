@@ -13,7 +13,10 @@ def process_file(path):
 
     tree = parser.parse(path.read_bytes())
     docstring_nodes = extract_docstring_nodes(tree)
-    violations = [check_docstring(path, node) for node in docstring_nodes]
+    violations = [
+        check_docstring(path, docstring, parent)
+        for docstring, parent in docstring_nodes
+    ]
 
     return len(violations), format_report(violations)
 
