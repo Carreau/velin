@@ -16,85 +16,65 @@ from velin2.tests import DummyNode, format_violations
             ----------
             a : int
                 description
-
-            Notes
-            -----
-            note
-
-            Examples
-            --------
-            >>> 1
-            1
             """,
             0,
-            id="passing",
+            id="parameters-passing",
         ),
         pytest.param(
-            """short summary
+            """
             Parameters
             ----------
-            a : int
-                description
-
-            Notes
-            -----
-            note
-
-            Examples
-            --------
-            >>> 1
-            1
+            a: text
+            b: text
             """,
             1,
-            id="between summary and parameters",
+            id="parameters-failing-paragraph",
         ),
         pytest.param(
-            """short summary
-
+            """
             Parameters
             ----------
-            a : int
-                description
-            Notes
-            -----
-            note
-
-            Examples
-            --------
-            >>> 1
-            1
+            - a
+            - b
             """,
             1,
-            id="between parameters and notes",
-            marks=[
-                pytest.mark.xfail(
-                    reason="needs further investigation and a fix in tree-sitter-rst"
-                )
-            ],
+            id="parameters-failing-bullet_list",
         ),
         pytest.param(
             """short summary
 
-            Parameters
+            Other Parameters
             ----------
             a : int
                 description
-
-            Notes
-            -----
-            note
-            Examples
-            --------
-            >>> 1
-            1
+            """,
+            0,
+            id="other parameters-passing",
+        ),
+        pytest.param(
+            """
+            Other Parameters
+            ----------
+            a: text
+            b: text
             """,
             1,
-            id="between notes and examples",
+            id="other parameters-failing-paragraph",
+        ),
+        pytest.param(
+            """
+            Other Parameters
+            ----------
+            - a
+            - b
+            """,
+            1,
+            id="other parameters-failing-bullet_list",
         ),
     ),
 )
-def test_blank_line_before_section(docstring, n_violations, rules):
-    rules.isolate("V001")
+def test_format_as_definition_list(docstring, n_violations, rules):
+    rules.isolate("V100")
 
     dummy_node = DummyNode()
 
@@ -112,73 +92,57 @@ def test_blank_line_before_section(docstring, n_violations, rules):
     ["docstring", "n_violations"],
     (
         pytest.param(
-            """short summary
-
+            """
             Parameters
             ----------
             a : int
                 description
-
-            Returns
-            -------
-            a : int
+            *args
+                description
+            **kwargs
                 description
             """,
             0,
-            id="passing",
+            id="parameters-passing",
         ),
         pytest.param(
-            """short summary
-
-            Paramters
-            ----------
-            a : int
-                description
-
-            Returns
-            -------
-            a : int
-                description
-            """,
-            1,
-            id="misspelled parameters",
-        ),
-        pytest.param(
-            """short summary
-
-            Args
-            ----
-            a : int
-                description
-
-            Returns
-            -------
-            a : int
-                description
-            """,
-            1,
-            id="invalid section",
-        ),
-        pytest.param(
-            """short summary
-
+            """
             Parameters
             ----------
-            a : int
-                description
-
-            results
-            -------
-            a : int
+            1a : int
                 description
             """,
             1,
-            id="misspelled results",
+            id="parameters-failing",
+        ),
+        pytest.param(
+            """
+            Other Parameters
+            ----------------
+            a : int
+                description
+            *args
+                description
+            **kwargs
+                description
+            """,
+            0,
+            id="other parameters-passing",
+        ),
+        pytest.param(
+            """
+            Other Parameters
+            ----------------
+            1a : int
+                description
+            """,
+            1,
+            id="other parameters-failing",
         ),
     ),
 )
-def test_section_name(docstring, n_violations, rules):
-    rules.isolate("V002")
+def test_term_is_a_python_identifier(docstring, n_violations, rules):
+    rules.isolate("V110")
 
     dummy_node = DummyNode()
 

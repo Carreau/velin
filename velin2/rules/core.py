@@ -63,9 +63,14 @@ def _check_docstring(tree, context):
     return violations
 
 
-def check_docstring(path, node):
-    cleaned_docstring, column_offsets = cleandoc(node.text.decode())
-    context = Context(path, node, column_offsets)
+def check_docstring(path, docstring, parent):
+    cleaned_docstring, column_offsets = cleandoc(docstring.text.decode())
+    context = Context(
+        path,
+        docstring_node=docstring,
+        parent_node=parent,
+        column_offsets=column_offsets,
+    )
     tree = parser_rst.parse(cleaned_docstring.encode())
 
     return _check_docstring(tree, context)
